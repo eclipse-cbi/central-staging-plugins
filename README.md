@@ -9,28 +9,55 @@
 
 Maven plugin for Sonatype Central Portal API ([API Doc](https://central.sonatype.com/api-doc)).
 
+- [Central Staging Plugins](#central-staging-plugins)
+  - [Features](#features)
+  - [Plugin Parameters](#plugin-parameters)
+  - [Plugin Goals](#plugin-goals)
+  - [Authenticate](#authenticate)
+  - [Build project](#build-project)
+  - [License](#license)
+  - [Contributing](#contributing)
+
+
 ## Features
+
 - Authenticate with Bearer token (from CLI or Maven settings.xml)
-- Check if a component is published
-- Retrieve deployment status
-- Publish a deployment (only if validated)
-- Maven plugin goals: `rc-list`, `rc-deployment-list`, `rc-release`, `rc-clean`
+- Check if a component is published in Central
+- Retrieve and display deployment status (state, errors, date)
+- List all deployments for a namespace, including state, creation date, and errors per component
+- Release (publish) a deployment if it is validated
+- Drop (delete) a deployment by ID
+- Drop all deployments in a namespace with `central.removeAll`
+- Drop only deployments in FAILED state with `central.removeFailedOnly` (works with single, latest, or all deployments)
+- Supports custom Central Portal API URL and serverId for token retrieval
+
 
 ## Plugin Parameters
 
-| Parameter              | Description                                                      | Default    | Required | Example Value                                  |
-|------------------------|------------------------------------------------------------------|------------|----------|------------------------------------------------|
-| central.bearerToken    | Bearer token for authentication                                  |            | Yes*     | xxxxxxxx...                                 |
-| central.serverId       | Server id in settings.xml to use for bearer token                | central    | No       | myserverid                                     |
-| central.namespace      | Namespace of the component                                      |            | Yes      | org.eclipse.cbi                                |
-| central.name           | Name of the component                                           |            | Yes      | org.eclipse.cbi.tycho.example-parent           |
-| central.version        | Version of the component                                        |            | Yes      | 1.0.0                                          |
-| central.deploymentId   | Deployment id for release/clean operations                      |            | Yes*     | xxxxx-xxxxx-xxxx-xxx-xxxxxxx           |
-| central.centralApiUrl  | Custom Central Portal API URL                                   | https://central.sonatype.com/api/v1/publisher | No       | https://central.sonatype.com/api/v1/publisher   |
+| Parameter              | Description                                                      | Default    | Example Value                                  |
+|------------------------|------------------------------------------------------------------|------------|------------------------------------------------|
+| central.bearerToken    | Bearer token for authentication                                  |            | xxxxxxxx...                                 |
+| central.serverId       | Server id in settings.xml to use for bearer token                | central    | myserverid                                     |
+| central.namespace      | Namespace of the component                                      |            | org.eclipse.cbi                                |
+| central.name           | Name of the component                                           |            | org.eclipse.cbi.tycho.example-parent           |
+| central.version        | Version of the component                                        |            | 1.0.0                                          |
+| central.deploymentId   | Deployment id for release/clean operations                      |            | xxxxx-xxxxx-xxxx-xxx-xxxxxxx           |
+| central.centralApiUrl  | Custom Central Portal API URL                                   | https://central.sonatype.com/api/v1/publisher | https://central.sonatype.com/api/v1/publisher   |
+| central.removeAll      | If true, drop all deployments in the namespace                  | false      | true                                           |
+| central.removeFailedOnly | If true, only drop deployments in FAILED state (used with removeAll or when dropping by id/latest) | true      | true                                           |
 
 You can provide your Bearer token either via the command line or securely via your Maven `settings.xml` file.
 
-### Using settings.xml
+## Plugin Goals
+
+| Goal/Function         | Description                                                      | Main Parameters                          | Example Command                                                    |
+|-----------------------|------------------------------------------------------------------|------------------------------------------|-------------------------------------------------------------------|
+| rc-status               | List publication status for a component                          | namespace, name, version, bearerToken     | mvn central-staging-plugins:rc-status -Dcentral.namespace=org.eclipse.cbi -Dcentral.name=org.eclipse.cbi.tycho.example-parent -Dcentral.version=1.0.0 |
+| rc-release            | Release a deployment (publish if validated)                      | deploymentId (optional), bearerToken | mvn central-staging-plugins:rc-release -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx           |
+| rc-clean              | Drop (delete) a deployment                                       | deploymentId, bearerToken                 | mvn central-staging-plugins:rc-clean -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx             |
+| rc-list    | List all deployments for a namespace, with state, date, and errors per component | namespace, bearerToken                    | mvn central-staging-plugins:rc-list -Dcentral.namespace=org.eclipse.cbi |
+
+## Authenticate 
 
 Add the following to your `~/.m2/settings.xml`:
 
@@ -46,7 +73,6 @@ Add the following to your `~/.m2/settings.xml`:
 </settings>
 ```
 
-
 You can change the server id used in `settings.xml` by passing `-Dcentral.serverId=yourServerId` to any plugin command. Example:
 
 ```sh
@@ -54,16 +80,6 @@ mvn central-staging-plugins:rc-release -Dcentral.serverId=myserverid
 ```
 
 The plugin will automatically use the token from the server with id `central` (or your custom id) if `-Dcentral.bearerToken` is not provided.
-
-
-## Plugin Goals & Functions
-
-| Goal/Function         | Description                                                      | Main Parameters                          | Example Command                                                    |
-|-----------------------|------------------------------------------------------------------|------------------------------------------|-------------------------------------------------------------------|
-| rc-list               | List publication status for a component                          | namespace, name, version, bearerToken     | mvn central-staging-plugins:rc-list -Dcentral.namespace=org.eclipse.cbi -Dcentral.name=org.eclipse.cbi.tycho.example-parent -Dcentral.version=1.0.0 |
-| rc-release            | Release a deployment (publish if validated)                      | deploymentId (optional), bearerToken | mvn central-staging-plugins:rc-release -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx           |
-| rc-clean              | Drop (delete) a deployment                                       | deploymentId, bearerToken                 | mvn central-staging-plugins:rc-clean -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx             |
-| rc-deployment-list    | List all deployments for a namespace, with state, date, and errors per component | namespace, bearerToken                    | mvn central-staging-plugins:rc-deployment-list -Dcentral.namespace=org.eclipse.cbi |
 
 
 ## Build project
