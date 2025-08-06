@@ -25,6 +25,11 @@ import java.util.Map;
 @Mojo(name = "rc-release", defaultPhase = LifecyclePhase.NONE)
 public class RcReleaseMojo extends AbstractCentralMojo {
     /**
+     * If true, only simulate the release (do not actually publish the deployment).
+     */
+    @Parameter(property = "central.dryRun", defaultValue = "false")
+    protected boolean dryRun;
+    /**
      * The deployment state value representing a validated deployment.
      */
     private static final String STATE_VALIDATED = "VALIDATED";
@@ -69,9 +74,14 @@ public class RcReleaseMojo extends AbstractCentralMojo {
             Object state = status.get("deploymentState");
             getLog().info("Current deployment state: " + state);
             if (isValidatedState(state)) {
-                getLog().info("Deployment is VALIDATED. Publishing deployment...");
-                Map<String, Object> result = client.publishDeployment(effectiveDeploymentId);
-                getLog().info("Release result: " + result);
+                getLog().info("Deployment is VALIDATED.");
+                if (dryRun) {
+                    getLog().info("[DRY RUN] Would publish deployment: " + effectiveDeploymentId);
+                } else {
+                    getLog().info("Publishing deployment...");
+                    Map<String, Object> result = client.publishDeployment(effectiveDeploymentId);
+                    getLog().info("Release result: " + result);
+                }
             } else {
                 getLog().warn("DeploymentId " + effectiveDeploymentId + " is not in VALIDATED state. Current state: " + state);
                 throw new IllegalArgumentException("DeploymentId " + effectiveDeploymentId + " is not in VALIDATED state. Current state: " + state);
