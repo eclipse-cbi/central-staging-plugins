@@ -36,12 +36,6 @@ public class RcReleaseMojo extends AbstractCentralMojo {
     protected String deploymentId;
 
     /**
-     * The Maven project instance for this execution.
-     */
-    @Parameter(defaultValue = "${project}", readonly = true, required = true)
-    protected MavenProject project;
-
-    /**
      * Executes the rc-release goal. Publishes the latest VALIDATED deployment for
      * the given GAV, or the specified deploymentId.
      */

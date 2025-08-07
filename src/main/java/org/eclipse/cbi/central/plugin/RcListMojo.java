@@ -23,12 +23,6 @@ public class RcListMojo extends AbstractCentralMojo {
     protected String namespace;
 
     /**
-     * The Maven project instance for this execution.
-     */
-    @Parameter(defaultValue = "${project}", readonly = true, required = true)
-    protected MavenProject project;
-
-    /**
      * Executes the rc-list goal. Lists deployments for the given namespace.
      * If showAllDeployments is true, lists all deployments; otherwise, only the
      * latest.

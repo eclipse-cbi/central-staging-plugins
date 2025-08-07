@@ -1,6 +1,7 @@
 package org.eclipse.cbi.central.plugin;
 
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.Server;
 import org.apache.maven.plugin.AbstractMojo;
@@ -30,6 +31,12 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "${settings}", readonly = true)
     protected Settings settings;
+
+    /**
+     * The Maven project instance for this execution.
+     */
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
+    protected MavenProject project;
 
     /**
      * The CentralPortalClient instance used for API interactions.

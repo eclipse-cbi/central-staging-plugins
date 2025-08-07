@@ -31,12 +31,6 @@ public class RcStatusMojo extends AbstractCentralMojo {
     protected String version;
 
     /**
-     * The Maven project instance for this execution.
-     */
-    @Parameter(defaultValue = "${project}", readonly = true, required = true)
-    protected MavenProject project;
-
-    /**
      * Executes the rc-status goal. Checks and prints the publication status for the
      * specified or effective GAV.
      */

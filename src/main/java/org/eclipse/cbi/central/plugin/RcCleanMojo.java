@@ -22,13 +22,13 @@ public class RcCleanMojo extends AbstractCentralMojo {
 
     private static final String DEPLOYMENT_STATE = "deploymentState";
     private static final String FAILED_STATE = "FAILED";
-    
+
     /**
      * If true, only simulate the clean (do not actually drop deployments).
      */
     @Parameter(property = "central.dryRun", defaultValue = "false")
     protected boolean dryRun;
-    
+
     /**
      * If true, drop all deployments in the namespace.
      */
@@ -45,12 +45,6 @@ public class RcCleanMojo extends AbstractCentralMojo {
      */
     @Parameter(property = "central.deploymentId")
     protected String deploymentId;
-
-    /**
-     * The Maven project instance for this execution.
-     */
-    @Parameter(defaultValue = "${project}", readonly = true, required = true)
-    protected MavenProject project;
 
     /**
      * Executes the rc-clean goal. Drops the deployment with the specified
@@ -72,7 +66,8 @@ public class RcCleanMojo extends AbstractCentralMojo {
                     Map<String, Object> status = client.getDeploymentStatus(deploymentId);
                     Object state = status.get(DEPLOYMENT_STATE);
                     if (!FAILED_STATE.equals(String.valueOf(state))) {
-                        getLog().info("Deployment " + deploymentId + " is not in " + FAILED_STATE + " state. Skipping drop.");
+                        getLog().info(
+                                "Deployment " + deploymentId + " is not in " + FAILED_STATE + " state. Skipping drop.");
                         return;
                     }
                 }
