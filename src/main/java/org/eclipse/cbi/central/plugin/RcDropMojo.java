@@ -13,18 +13,17 @@ package org.eclipse.cbi.central.plugin;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.project.MavenProject;
 import org.apache.maven.plugin.MojoFailureException;
 import java.util.Map;
 
-@Mojo(name = "rc-clean", defaultPhase = LifecyclePhase.NONE)
-public class RcCleanMojo extends AbstractCentralMojo {
+@Mojo(name = "rc-drop", defaultPhase = LifecyclePhase.NONE)
+public class RcDropMojo extends AbstractCentralMojo {
 
     private static final String DEPLOYMENT_STATE = "deploymentState";
     private static final String FAILED_STATE = "FAILED";
 
     /**
-     * If true, only simulate the clean (do not actually drop deployments).
+     * If true, only simulate the drop (do not actually drop deployments).
      */
     @Parameter(property = "central.dryRun", defaultValue = "false")
     protected boolean dryRun;
@@ -47,15 +46,15 @@ public class RcCleanMojo extends AbstractCentralMojo {
     protected String deploymentId;
 
     /**
-     * Executes the rc-clean goal. Drops the deployment with the specified
+     * Executes the rc-drop goal. Drops the deployment with the specified
      * deploymentId.
      */
     @Override
     public void execute() throws MojoFailureException {
         try {
-            getLog().info("Starting rc-clean goal");
+            getLog().info("Starting rc-drop goal");
             if (!project.isExecutionRoot()) {
-                getLog().info("Skipping rc-clean: not execution root");
+                getLog().info("Skipping rc-drop: not execution root");
                 return;
             }
             initClient();
@@ -72,10 +71,10 @@ public class RcCleanMojo extends AbstractCentralMojo {
                     }
                 }
                 if (dryRun) {
-                    getLog().info("[DRY RUN] Would clean deployment " + deploymentId);
+                    getLog().info("[DRY RUN] Would drop deployment " + deploymentId);
                 } else {
                     Map<String, Object> result = client.dropDeployment(deploymentId);
-                    getLog().info("Clean deployment " + deploymentId + " result: " + result);
+                    getLog().info("Dropped deployment " + deploymentId + " result: " + result);
                 }
             } else {
                 // Drop the latest deployment if neither removeAll nor deploymentId is set
