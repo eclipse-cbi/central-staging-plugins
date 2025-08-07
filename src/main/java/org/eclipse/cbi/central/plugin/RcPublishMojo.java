@@ -15,8 +15,8 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugin.MojoFailureException;
 import java.util.Map;
 
-@Mojo(name = "rc-release", defaultPhase = LifecyclePhase.NONE)
-public class RcReleaseMojo extends AbstractCentralMojo {
+@Mojo(name = "rc-publish", defaultPhase = LifecyclePhase.NONE)
+public class RcPublishMojo extends AbstractCentralMojo {
     /**
      * If true, only simulate the release (do not actually publish the deployment).
      */
@@ -35,15 +35,15 @@ public class RcReleaseMojo extends AbstractCentralMojo {
     protected String deploymentId;
 
     /**
-     * Executes the rc-release goal. Publishes the latest VALIDATED deployment for
+     * Executes the rc-publish goal. Publishes the latest VALIDATED deployment for
      * the given GAV, or the specified deploymentId.
      */
     @Override
     public void execute() throws MojoFailureException {
         try {
-            getLog().info("Starting rc-release goal");
+            getLog().info("Starting rc-publish goal");
             if (!project.isExecutionRoot()) {
-                getLog().info("Skipping rc-release: not execution root");
+                getLog().info("Skipping rc-publish: not execution root");
                 return;
             }
             initClient();
@@ -72,7 +72,7 @@ public class RcReleaseMojo extends AbstractCentralMojo {
                 } else {
                     getLog().info("Publishing deployment...");
                     Map<String, Object> result = client.publishDeployment(effectiveDeploymentId);
-                    getLog().info("Release result: " + result);
+                    getLog().info("Publish result: " + result);
                 }
             } else {
                 getLog().warn("DeploymentId " + effectiveDeploymentId + " is not in VALIDATED state. Current state: "
@@ -81,8 +81,8 @@ public class RcReleaseMojo extends AbstractCentralMojo {
                         + " is not in VALIDATED state. Current state: " + state);
             }
         } catch (Exception e) {
-            getLog().error("Failed to release deployment", e);
-            throw new MojoFailureException("Failed to release deployment", e);
+            getLog().error("Failed to publish deployment", e);
+            throw new MojoFailureException("Failed to publish deployment", e);
         }
     }
 

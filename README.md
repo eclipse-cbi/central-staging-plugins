@@ -55,7 +55,7 @@ You can provide your Bearer token either via the command line or securely via yo
 | Goal/Function | Description                                                                      | Main Parameters                              | Example Command                                                                                                                                       |
 | ------------- | -------------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | rc-status     | List publication status for a component                                          | namespace, name, version, bearerToken        | mvn central-staging-plugins:rc-status -Dcentral.namespace=org.eclipse.cbi -Dcentral.name=org.eclipse.cbi.tycho.example-parent -Dcentral.version=1.0.0 |
-| rc-release    | Release a deployment (publish if validated, supports dry run)                    | deploymentId (optional), bearerToken, dryRun | mvn central-staging-plugins:rc-release -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true                                      |
+| rc-publish    | Publish a deployment (publish if validated, supports dry run)                    | deploymentId (optional), bearerToken, dryRun | mvn central-staging-plugins:rc-publish -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true                                      |
 | rc-drop      | Drop (delete) a deployment (supports dry run)                                    | deploymentId, bearerToken, dryRun            | mvn central-staging-plugins:rc-drop -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true                                        |
 | rc-list       | List all deployments for a namespace, with state, date, and errors per component | namespace, bearerToken                       | mvn central-staging-plugins:rc-list -Dcentral.namespace=org.eclipse.cbi                                                                               |
 
@@ -78,7 +78,7 @@ Add the following to your `~/.m2/settings.xml`:
 You can change the server id used in `settings.xml` by passing `-Dcentral.serverId=yourServerId` to any plugin command. Example:
 
 ```sh
-mvn central-staging-plugins:rc-release -Dcentral.serverId=myserverid
+mvn central-staging-plugins:rc-publish -Dcentral.serverId=myserverid
 ```
 
 The plugin will automatically use the token from the server with id `central` (or your custom id) if `-Dcentral.bearerToken` is not provided.
@@ -133,7 +133,7 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       - name: Release package
         run: |        
-          mvn -P central-staging --batch-mode central-staging-plugins:rc-release
+          mvn -P central-staging --batch-mode central-staging-plugins:rc-publish
         env:
           MAVEN_PASSWORD: ${{ env.CENTRAL_SONATYPE_TOKEN }}
 ```
