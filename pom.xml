@@ -13,6 +13,18 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <url>https://www.eclipse.org/cbi/</url>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/eclipse-cbi/central-staging-plugins/issues</url>
+    </issueManagement>
+
+    <scm>
+        <url>https://github.com/eclipse-cbi/central-staging-plugins</url>
+        <connection>scm:git:git://github.com/eclipse-cbi/central-staging-plugins.git</connection>
+        <developerConnection>scm:git:git@github.com/eclipse-cbi/central-staging-plugins.git</developerConnection>
+    </scm>
 
     <dependencies>
         <dependency>
