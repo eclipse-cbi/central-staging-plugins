@@ -14,6 +14,7 @@ Maven plugin for Sonatype Central Portal API ([API Doc](https://central.sonatype
   - [Plugin Parameters](#plugin-parameters)
   - [Plugin Goals](#plugin-goals)
   - [Authenticate](#authenticate)
+  - [Github Integration Example](#github-integration-example)
   - [Build project](#build-project)
   - [License](#license)
   - [Contributing](#contributing)
@@ -82,6 +83,54 @@ mvn central-staging-plugins:rc-release -Dcentral.serverId=myserverid
 
 The plugin will automatically use the token from the server with id `central` (or your custom id) if `-Dcentral.bearerToken` is not provided.
 
+
+## Github Integration Example
+
+
+```yaml
+name: Publish staging package to the Maven Central Repository
+on:
+  push:
+    branches: [ "staging" ]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          server-id: central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Generate Sonatype Bearer Token
+        id: bearer_token
+        run: |
+          echo "CENTRAL_SONATYPE_TOKEN=$(echo -n '${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}:${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}' | base64)" >> $GITHUB_ENV
+      - name: Clean failed staging deployments
+        run: |        
+          mvn -P central-staging --batch-mode central-staging-plugins:rc-clean -Dcentral.removeAll=true
+        env:
+          MAVEN_PASSWORD: ${{ env.CENTRAL_SONATYPE_TOKEN }}
+      - name: Publish package
+        run: |
+          mvn -P central-staging --batch-mode clean compile javadoc:jar deploy -DskipTests
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Release package
+        run: |        
+          mvn -P central-staging --batch-mode central-staging-plugins:rc-release
+        env:
+          MAVEN_PASSWORD: ${{ env.CENTRAL_SONATYPE_TOKEN }}
+```
 
 ## Build project
 
