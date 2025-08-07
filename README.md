@@ -35,29 +35,29 @@ Maven plugin for Sonatype Central Portal API ([API Doc](https://central.sonatype
 
 ## Plugin Parameters
 
-| Parameter              | Description                                                      | Default    | Example Value                                  |
-|------------------------|------------------------------------------------------------------|------------|------------------------------------------------|
-| central.bearerToken    | Bearer token for authentication                                  |            | xxxxxxxx...                                 |
-| central.serverId       | Server id in settings.xml to use for bearer token                | central    | myserverid                                     |
-| central.namespace      | Namespace of the component                                      |            | org.eclipse.cbi                                |
-| central.name           | Name of the component                                           |            | org.eclipse.cbi.tycho.example-parent           |
-| central.version        | Version of the component                                        |            | 1.0.0                                          |
-| central.deploymentId   | Deployment id for release/clean operations                      |            | xxxxx-xxxxx-xxxx-xxx-xxxxxxx           |
-| central.centralApiUrl  | Custom Central Portal API URL                                   | https://central.sonatype.com/api/v1/publisher | https://central.sonatype.com/api/v1/publisher   |
-| central.removeAll      | If true, drop all deployments in the namespace                  | false      | true                                           |
-| central.removeFailedOnly | If true, only drop deployments in FAILED state (used with removeAll or when dropping by id/latest) | true      | true                                           |
-| central.dryRun        | If true, only simulate the release/clean (no action performed)   | false      | true                                           |
+| Parameter                | Description                                                                                        | Default                                       | Example Value                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------- |
+| central.bearerToken      | Bearer token for authentication                                                                    |                                               | xxxxxxxx...                                   |
+| central.serverId         | Server id in settings.xml to use for bearer token                                                  | central                                       | myserverid                                    |
+| central.namespace        | Namespace of the component                                                                         |                                               | org.eclipse.cbi                               |
+| central.name             | Name of the component                                                                              |                                               | org.eclipse.cbi.tycho.example-parent          |
+| central.version          | Version of the component                                                                           |                                               | 1.0.0                                         |
+| central.deploymentId     | Deployment id for release/clean operations                                                         |                                               | xxxxx-xxxxx-xxxx-xxx-xxxxxxx                  |
+| central.centralApiUrl    | Custom Central Portal API URL                                                                      | https://central.sonatype.com/api/v1/publisher | https://central.sonatype.com/api/v1/publisher |
+| central.removeAll        | If true, drop all deployments in the namespace                                                     | false                                         | true                                          |
+| central.removeFailedOnly | If true, only drop deployments in FAILED state (used with removeAll or when dropping by id/latest) | true                                          | true                                          |
+| central.dryRun           | If true, only simulate the release/clean (no action performed)                                     | false                                         | true                                          |
 
 You can provide your Bearer token either via the command line or securely via your Maven `settings.xml` file.
 
 ## Plugin Goals
 
-| Goal/Function         | Description                                                      | Main Parameters                          | Example Command                                                    |
-|-----------------------|------------------------------------------------------------------|------------------------------------------|-------------------------------------------------------------------|
-| rc-status               | List publication status for a component                          | namespace, name, version, bearerToken     | mvn central-staging-plugins:rc-status -Dcentral.namespace=org.eclipse.cbi -Dcentral.name=org.eclipse.cbi.tycho.example-parent -Dcentral.version=1.0.0 |
-| rc-release            | Release a deployment (publish if validated, supports dry run)    | deploymentId (optional), bearerToken, dryRun | mvn central-staging-plugins:rc-release -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true           |
-| rc-clean              | Drop (delete) a deployment (supports dry run)                    | deploymentId, bearerToken, dryRun            | mvn central-staging-plugins:rc-clean -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true             |
-| rc-list    | List all deployments for a namespace, with state, date, and errors per component | namespace, bearerToken                    | mvn central-staging-plugins:rc-list -Dcentral.namespace=org.eclipse.cbi |
+| Goal/Function | Description                                                                      | Main Parameters                              | Example Command                                                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| rc-status     | List publication status for a component                                          | namespace, name, version, bearerToken        | mvn central-staging-plugins:rc-status -Dcentral.namespace=org.eclipse.cbi -Dcentral.name=org.eclipse.cbi.tycho.example-parent -Dcentral.version=1.0.0 |
+| rc-release    | Release a deployment (publish if validated, supports dry run)                    | deploymentId (optional), bearerToken, dryRun | mvn central-staging-plugins:rc-release -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true                                      |
+| rc-clean      | Drop (delete) a deployment (supports dry run)                                    | deploymentId, bearerToken, dryRun            | mvn central-staging-plugins:rc-clean -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true                                        |
+| rc-list       | List all deployments for a namespace, with state, date, and errors per component | namespace, bearerToken                       | mvn central-staging-plugins:rc-list -Dcentral.namespace=org.eclipse.cbi                                                                               |
 
 ## Authenticate 
 

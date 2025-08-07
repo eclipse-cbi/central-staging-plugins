@@ -1,7 +1,6 @@
 package org.eclipse.cbi.central.plugin;
 
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.Server;
 import org.apache.maven.plugin.AbstractMojo;
@@ -38,7 +37,8 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
     protected CentralPortalClient client;
 
     /**
-     * Retrieves the bearer token for authentication. Checks the parameter, then settings.xml server entry.
+     * Retrieves the bearer token for authentication. Checks the parameter, then
+     * settings.xml server entry.
      *
      * @return the bearer token string
      * @throws IllegalArgumentException if no token is found
@@ -60,7 +60,8 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
     }
 
     /**
-     * Initializes the CentralPortalClient using the bearer token and optional API URL.
+     * Initializes the CentralPortalClient using the bearer token and optional API
+     * URL.
      */
     protected void initClient() {
         client = centralApiUrl != null && centralApiUrl.isEmpty()

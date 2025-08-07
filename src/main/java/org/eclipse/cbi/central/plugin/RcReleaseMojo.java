@@ -12,13 +12,7 @@ package org.eclipse.cbi.central.plugin;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugin.AbstractMojo;
-import org.eclipse.cbi.central.CentralPortalClient;
-import org.apache.maven.settings.Settings;
-import org.apache.maven.settings.Server;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugin.MojoFailureException;
 import java.util.Map;
 
@@ -35,7 +29,8 @@ public class RcReleaseMojo extends AbstractCentralMojo {
     private static final String STATE_VALIDATED = "VALIDATED";
 
     /**
-     * The deployment ID to release. If not set, the latest VALIDATED deployment for the GAV is used.
+     * The deployment ID to release. If not set, the latest VALIDATED deployment for
+     * the GAV is used.
      */
     @Parameter(property = "central.deploymentId")
     protected String deploymentId;
@@ -47,10 +42,11 @@ public class RcReleaseMojo extends AbstractCentralMojo {
     protected MavenProject project;
 
     /**
-     * Executes the rc-release goal. Publishes the latest VALIDATED deployment for the given GAV, or the specified deploymentId.
+     * Executes the rc-release goal. Publishes the latest VALIDATED deployment for
+     * the given GAV, or the specified deploymentId.
      */
     @Override
-    public void execute() throws MojoFailureException{
+    public void execute() throws MojoFailureException {
         try {
             getLog().info("Starting rc-release goal");
             if (!project.isExecutionRoot()) {
@@ -60,15 +56,18 @@ public class RcReleaseMojo extends AbstractCentralMojo {
             initClient();
             String effectiveDeploymentId = deploymentId;
             if (effectiveDeploymentId == null || effectiveDeploymentId.isEmpty()) {
-                effectiveDeploymentId = findLatestValidatedDeploymentId(project.getGroupId(), project.getArtifactId(), project.getVersion());
+                effectiveDeploymentId = findLatestValidatedDeploymentId(project.getGroupId(), project.getArtifactId(),
+                        project.getVersion());
                 if (effectiveDeploymentId == null) {
-                    getLog().warn("No VALIDATED deployment found for GAV: " + project.getGroupId() + ":" + project.getArtifactId() + ":" + project.getVersion());
-                    throw new IllegalArgumentException("No VALIDATED deployment found for GAV: " + project.getGroupId() + ":" + project.getArtifactId() + ":" + project.getVersion());
+                    getLog().warn("No VALIDATED deployment found for GAV: " + project.getGroupId() + ":"
+                            + project.getArtifactId() + ":" + project.getVersion());
+                    throw new IllegalArgumentException("No VALIDATED deployment found for GAV: " + project.getGroupId()
+                            + ":" + project.getArtifactId() + ":" + project.getVersion());
                 }
                 getLog().info("Found latest VALIDATED deployment: " + effectiveDeploymentId);
             } else {
                 getLog().info("Using provided deploymentId: " + effectiveDeploymentId);
-            } 
+            }
             getLog().info("Checking deployment status for deploymentId: " + effectiveDeploymentId);
             Map<String, Object> status = client.getDeploymentStatus(effectiveDeploymentId);
             Object state = status.get("deploymentState");
@@ -83,8 +82,10 @@ public class RcReleaseMojo extends AbstractCentralMojo {
                     getLog().info("Release result: " + result);
                 }
             } else {
-                getLog().warn("DeploymentId " + effectiveDeploymentId + " is not in VALIDATED state. Current state: " + state);
-                throw new IllegalArgumentException("DeploymentId " + effectiveDeploymentId + " is not in VALIDATED state. Current state: " + state);
+                getLog().warn("DeploymentId " + effectiveDeploymentId + " is not in VALIDATED state. Current state: "
+                        + state);
+                throw new IllegalArgumentException("DeploymentId " + effectiveDeploymentId
+                        + " is not in VALIDATED state. Current state: " + state);
             }
         } catch (Exception e) {
             getLog().error("Failed to release deployment", e);
@@ -98,18 +99,20 @@ public class RcReleaseMojo extends AbstractCentralMojo {
     private String findLatestValidatedDeploymentId(String groupId, String artifactId, String version) {
         try {
             String namespace = groupId;
-            Map<String, Object> deploymentsResult = client.listDeployments(namespace, 0, 500, "createTimestamp", "desc");
+            Map<String, Object> deploymentsResult = client.listDeployments(namespace, 0, 500, "createTimestamp",
+                    "desc");
             Object deploymentsObj = deploymentsResult.get("deployments");
             String gavPurlPrefix = String.format("pkg:maven/%s/%s@%s", groupId, artifactId, version);
             if (deploymentsObj instanceof java.util.List<?> deployments) {
                 for (Object depObj : deployments) {
-                    if (depObj instanceof Map<?,?> dep) {
+                    if (depObj instanceof Map<?, ?> dep) {
                         Object depState = dep.get("deploymentState");
-                        if (!isValidatedState(depState)) continue;
+                        if (!isValidatedState(depState))
+                            continue;
                         Object componentsObj = dep.get("deployedComponentVersions");
                         if (componentsObj instanceof java.util.List<?> components) {
                             for (Object compObj : components) {
-                                if (compObj instanceof Map<?,?> comp) {
+                                if (compObj instanceof Map<?, ?> comp) {
                                     Object purlObj = comp.get("purl");
                                     if (purlObj != null && purlObj.toString().startsWith(gavPurlPrefix)) {
                                         return dep.get("deploymentId").toString();

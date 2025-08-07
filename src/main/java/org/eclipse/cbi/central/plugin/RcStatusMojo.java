@@ -3,14 +3,6 @@ package org.eclipse.cbi.central.plugin;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugin.AbstractMojo;
-import org.eclipse.cbi.central.CentralPortalClient;
-
-import org.eclipse.cbi.central.plugin.AbstractCentralMojo;
-
-import org.apache.maven.settings.Settings;
-import org.apache.maven.settings.Server;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.plugin.MojoFailureException;
 import java.util.Map;
@@ -18,19 +10,22 @@ import java.util.Map;
 @Mojo(name = "rc-status", defaultPhase = LifecyclePhase.NONE)
 public class RcStatusMojo extends AbstractCentralMojo {
     /**
-     * The namespace to use for publication status checks. Defaults to the project's groupId if not set.
+     * The namespace to use for publication status checks. Defaults to the project's
+     * groupId if not set.
      */
     @Parameter(property = "central.namespace")
     protected String namespace;
 
     /**
-     * The name (artifactId) to use for publication status checks. Defaults to the project's artifactId if not set.
+     * The name (artifactId) to use for publication status checks. Defaults to the
+     * project's artifactId if not set.
      */
     @Parameter(property = "central.name")
     protected String name;
 
     /**
-     * The version to use for publication status checks. Defaults to the project's version if not set.
+     * The version to use for publication status checks. Defaults to the project's
+     * version if not set.
      */
     @Parameter(property = "central.version")
     protected String version;
@@ -42,7 +37,8 @@ public class RcStatusMojo extends AbstractCentralMojo {
     protected MavenProject project;
 
     /**
-     * Executes the rc-status goal. Checks and prints the publication status for the specified or effective GAV.
+     * Executes the rc-status goal. Checks and prints the publication status for the
+     * specified or effective GAV.
      */
     @Override
     public void execute() throws MojoFailureException {

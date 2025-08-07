@@ -3,11 +3,6 @@ package org.eclipse.cbi.central.plugin;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugin.AbstractMojo;
-import org.eclipse.cbi.central.CentralPortalClient;
-import org.apache.maven.settings.Settings;
-import org.apache.maven.settings.Server;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.plugin.MojoFailureException;
 import java.util.Map;
@@ -21,7 +16,8 @@ public class RcListMojo extends AbstractCentralMojo {
     protected boolean showAllDeployments;
 
     /**
-     * The namespace to use for listing deployments. Defaults to the project's groupId if not set.
+     * The namespace to use for listing deployments. Defaults to the project's
+     * groupId if not set.
      */
     @Parameter(property = "central.namespace")
     protected String namespace;
@@ -34,10 +30,11 @@ public class RcListMojo extends AbstractCentralMojo {
 
     /**
      * Executes the rc-list goal. Lists deployments for the given namespace.
-     * If showAllDeployments is true, lists all deployments; otherwise, only the latest.
+     * If showAllDeployments is true, lists all deployments; otherwise, only the
+     * latest.
      */
     @Override
-    public void execute() throws MojoFailureException{
+    public void execute() throws MojoFailureException {
         try {
             getLog().info("Starting rc-list goal");
             if (!project.isExecutionRoot()) {
@@ -71,7 +68,8 @@ public class RcListMojo extends AbstractCentralMojo {
     }
 
     /**
-     * Prints details of a deployment, including deployment ID, state, creation date,
+     * Prints details of a deployment, including deployment ID, state, creation
+     * date,
      * and deployed component versions with their errors (if any).
      *
      * @param depObj The deployment object to print (expected to be a Map).

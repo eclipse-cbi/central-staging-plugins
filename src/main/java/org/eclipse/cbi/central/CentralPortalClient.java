@@ -1,5 +1,4 @@
 
-
 /*
  * Copyright (c) 2025 Eclipse Foundation and others.
  *
@@ -77,11 +76,12 @@ public class CentralPortalClient {
     }
 
     /**
-     * Handles HTTP responses, parses JSON if expected, and throws exceptions for error codes.
+     * Handles HTTP responses, parses JSON if expected, and throws exceptions for
+     * error codes.
      *
-     * @param response The HTTP response
+     * @param response      The HTTP response
      * @param errorMessages Map of error codes to messages
-     * @param expectJson Whether to parse the response body as JSON
+     * @param expectJson    Whether to parse the response body as JSON
      * @return Parsed response as a Map
      * @throws IOException if an error or unexpected code occurs
      */
@@ -101,11 +101,12 @@ public class CentralPortalClient {
     }
 
     /**
-     * Checks if a component is published in Central for the given namespace, name, and version.
+     * Checks if a component is published in Central for the given namespace, name,
+     * and version.
      *
      * @param namespace The namespace (groupId)
-     * @param name The name (artifactId)
-     * @param version The version
+     * @param name      The name (artifactId)
+     * @param version   The version
      * @return Publication status as a Map
      * @throws IOException if the request fails
      */
@@ -187,12 +188,13 @@ public class CentralPortalClient {
 
     // List deployments for a given pathStarting (namespace)
     /**
-     * Lists deployments for a given namespace (pathStarting) with pagination and sorting.
+     * Lists deployments for a given namespace (pathStarting) with pagination and
+     * sorting.
      *
-     * @param pathStarting The namespace (groupId)
-     * @param page Page number
-     * @param size Page size
-     * @param sortField Field to sort by
+     * @param pathStarting  The namespace (groupId)
+     * @param page          Page number
+     * @param size          Page size
+     * @param sortField     Field to sort by
      * @param sortDirection Sort direction (asc/desc)
      * @return List of deployments as a Map
      * @throws IOException if the request fails
