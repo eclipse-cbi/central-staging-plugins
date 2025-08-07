@@ -83,6 +83,12 @@ mvn central-staging-plugins:rc-release -Dcentral.serverId=myserverid
 
 The plugin will automatically use the token from the server with id `central` (or your custom id) if `-Dcentral.bearerToken` is not provided.
 
+How to produce a bearer token?
+
+```shell
+$ printf "example_username:example_password" | base64
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
 
 ## Github Integration Example
 
