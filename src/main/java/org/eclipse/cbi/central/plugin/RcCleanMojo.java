@@ -50,10 +50,11 @@ public class RcCleanMojo extends AbstractCentralMojo {
     protected MavenProject project;
 
     /**
-     * Executes the rc-clean goal. Drops the deployment with the specified deploymentId.
+     * Executes the rc-clean goal. Drops the deployment with the specified
+     * deploymentId.
      */
     @Override
-    public void execute()throws MojoFailureException {
+    public void execute() throws MojoFailureException {
         try {
             getLog().info("Starting rc-clean goal");
             if (!project.isExecutionRoot()) {
@@ -81,7 +82,8 @@ public class RcCleanMojo extends AbstractCentralMojo {
             } else {
                 // Drop the latest deployment if neither removeAll nor deploymentId is set
                 String namespace = project.getGroupId();
-                Map<String, Object> deploymentsResult = client.listDeployments(namespace, 0, 1, "createTimestamp", "desc");
+                Map<String, Object> deploymentsResult = client.listDeployments(namespace, 0, 1, "createTimestamp",
+                        "desc");
                 Object deploymentsObj = deploymentsResult.get("deployments");
                 if (deploymentsObj instanceof java.util.List<?> deployments && !deployments.isEmpty()) {
                     Map<?, ?> latestDep = (Map<?, ?>) deployments.get(0);
@@ -95,7 +97,8 @@ public class RcCleanMojo extends AbstractCentralMojo {
                         getLog().info("[DRY RUN] Would drop latest deployment " + latestId + " (state: " + state + ")");
                     } else {
                         Map<String, Object> result = client.dropDeployment(latestId);
-                        getLog().info("Dropped latest deployment " + latestId + " (state: " + state + ") result: " + result);
+                        getLog().info(
+                                "Dropped latest deployment " + latestId + " (state: " + state + ") result: " + result);
                     }
                 } else {
                     getLog().info("No deployments found to drop.");
@@ -108,46 +111,53 @@ public class RcCleanMojo extends AbstractCentralMojo {
     }
 
     /**
-     * Drops all deployments in the namespace. If onlyFailed is true, only drops deployments in FAILED state.
+     * Drops all deployments in the namespace. If onlyFailed is true, only drops
+     * deployments in FAILED state.
      */
-    private void dropAllDeployments(boolean onlyFailed) {
+    private void dropAllDeployments(boolean onlyFailed) throws MojoFailureException {
         dropAllDeployments(onlyFailed, false);
     }
 
     /**
-     * Drops all deployments in the namespace. If onlyFailed is true, only drops deployments in FAILED state.
+     * Drops all deployments in the namespace. If onlyFailed is true, only drops
+     * deployments in FAILED state.
      * If dryRun is true, only simulates the drop.
      */
-    private void dropAllDeployments(boolean onlyFailed, boolean dryRun) {
+    private void dropAllDeployments(boolean onlyFailed, boolean dryRun) throws MojoFailureException {
         String namespace = project.getGroupId();
         try {
-            Map<String, Object> deploymentsResult = client.listDeployments(namespace, 0, 500, "createTimestamp", "desc");
+            Map<String, Object> deploymentsResult = client.listDeployments(namespace, 0, 500, "createTimestamp",
+                    "desc");
             Object deploymentsObj = deploymentsResult.get("deployments");
             if (deploymentsObj instanceof java.util.List<?> deployments) {
-                deployments.stream()
-                    .filter(Map.class::isInstance)
-                    .map(depObj -> (Map<?, ?>) depObj)
-                    .filter(dep -> !onlyFailed || "FAILED".equals(String.valueOf(dep.get(DEPLOYMENT_STATE))))
-                    .forEach(dep -> dropSingleDeployment(dep, dryRun));
+                for (Object depObj : deployments) {
+                    if (depObj instanceof Map<?, ?> dep) {
+                        if (!onlyFailed || "FAILED".equals(String.valueOf(dep.get(DEPLOYMENT_STATE)))) {
+                            dropSingleDeployment(dep, dryRun);
+                        }
+                    }
+                }
             } else {
                 getLog().info("No deployments found to drop.");
             }
         } catch (Exception e) {
             getLog().error("Error dropping deployments", e);
+            throw new MojoFailureException("Error dropping deployments", e);
         }
     }
 
     /**
      * Drops a single deployment and logs the result or any error.
      */
-    private void dropSingleDeployment(Map<?, ?> dep) {
+    private void dropSingleDeployment(Map<?, ?> dep) throws MojoFailureException {
         dropSingleDeployment(dep, false);
     }
 
     /**
-     * Drops a single deployment and logs the result or any error. If dryRun is true, only simulates the drop.
+     * Drops a single deployment and logs the result or any error. If dryRun is
+     * true, only simulates the drop.
      */
-    private void dropSingleDeployment(Map<?, ?> dep, boolean dryRun) {
+    private void dropSingleDeployment(Map<?, ?> dep, boolean dryRun) throws MojoFailureException {
         String id = String.valueOf(dep.get("deploymentId"));
         String state = String.valueOf(dep.get(DEPLOYMENT_STATE));
         if (dryRun) {
@@ -158,7 +168,8 @@ public class RcCleanMojo extends AbstractCentralMojo {
             Map<String, Object> result = client.dropDeployment(id);
             getLog().info("Dropped deployment " + id + " (state: " + state + ") result: " + result);
         } catch (Exception e) {
-            getLog().warn("Failed to drop deployment " + id + " (state: " + state + ")", e);
+            getLog().error("Failed to drop deployment " + id + " (state: " + state + ")", e);
+            throw new MojoFailureException("Failed to drop deployment " + id + " (state: " + state + ")", e);
         }
     }
 }
