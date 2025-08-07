@@ -19,12 +19,16 @@ import java.util.Map;
 
 @Mojo(name = "rc-clean", defaultPhase = LifecyclePhase.NONE)
 public class RcCleanMojo extends AbstractCentralMojo {
+
+    private static final String DEPLOYMENT_STATE = "deploymentState";
+    private static final String FAILED_STATE = "FAILED";
+    
     /**
      * If true, only simulate the clean (do not actually drop deployments).
      */
     @Parameter(property = "central.dryRun", defaultValue = "false")
     protected boolean dryRun;
-    private static final String DEPLOYMENT_STATE = "deploymentState";
+    
     /**
      * If true, drop all deployments in the namespace.
      */
@@ -67,8 +71,8 @@ public class RcCleanMojo extends AbstractCentralMojo {
                 if (removeFailedOnly) {
                     Map<String, Object> status = client.getDeploymentStatus(deploymentId);
                     Object state = status.get(DEPLOYMENT_STATE);
-                    if (!"FAILED".equals(String.valueOf(state))) {
-                        getLog().info("Deployment " + deploymentId + " is not in FAILED state. Skipping drop.");
+                    if (!FAILED_STATE.equals(String.valueOf(state))) {
+                        getLog().info("Deployment " + deploymentId + " is not in " + FAILED_STATE + " state. Skipping drop.");
                         return;
                     }
                 }
@@ -88,7 +92,7 @@ public class RcCleanMojo extends AbstractCentralMojo {
                     Map<?, ?> latestDep = (Map<?, ?>) deployments.get(0);
                     String latestId = String.valueOf(latestDep.get("deploymentId"));
                     String state = String.valueOf(latestDep.get(DEPLOYMENT_STATE));
-                    if (removeFailedOnly && !"FAILED".equals(state)) {
+                    if (removeFailedOnly && !FAILED_STATE.equals(state)) {
                         getLog().info("Latest deployment " + latestId + " is not in FAILED state. Skipping drop.");
                         return;
                     }
@@ -131,7 +135,7 @@ public class RcCleanMojo extends AbstractCentralMojo {
             if (deploymentsObj instanceof java.util.List<?> deployments) {
                 for (Object depObj : deployments) {
                     if (depObj instanceof Map<?, ?> dep) {
-                        if (!onlyFailed || "FAILED".equals(String.valueOf(dep.get(DEPLOYMENT_STATE)))) {
+                        if (!onlyFailed || FAILED_STATE.equals(String.valueOf(dep.get(DEPLOYMENT_STATE)))) {
                             dropSingleDeployment(dep, dryRun);
                         }
                     }
