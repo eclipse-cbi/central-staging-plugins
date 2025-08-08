@@ -46,6 +46,11 @@ public final class DeploymentConstants {
     public static final String PUBLISHED_STATE = "PUBLISHED";
 
     /**
+     * Deployment state: The deployment is being uploaded to Maven Central.
+     */
+    public static final String PUBLISHING_STATE = "PUBLISHING";
+
+    /**
      * Field name for deployment ID in API responses.
      */
     public static final String DEPLOYMENT_ID = "deploymentId";

@@ -45,15 +45,12 @@ public class RcUploadMojo extends AbstractCentralMojo {
     protected String bundleName;
 
     /**
-     * The publishing type for the upload.
-     * USER_MANAGED: Deployment stops in VALIDATED state and requires manual
-     * approval.
-     * AUTOMATIC: Deployment automatically progresses to PUBLISHING when validation
-     * passes.
-     * Available values: USER_MANAGED, AUTOMATIC
+     * Whether to automatically publish the deployment after validation.
+     * If true, the deployment will automatically progress to PUBLISHING when validation passes (AUTOMATIC mode).
+     * If false, the deployment will stop in VALIDATED state and require manual approval (USER_MANAGED mode).
      */
-    @Parameter(property = "central.publishingType", defaultValue = DeploymentConstants.PUBLISHING_TYPE_USER_MANAGED)
-    protected String publishingType;
+    @Parameter(property = "central.automaticPublishing", defaultValue = "false")
+    protected boolean automaticPublishing;
 
     /**
      * Maximum wait time in seconds for validation to complete.
@@ -73,6 +70,13 @@ public class RcUploadMojo extends AbstractCentralMojo {
     @Parameter(property = "central.pollInterval", defaultValue = "5")
     protected int pollInterval;
 
+    /**
+     * If true, wait for the complete publishing process to finish.
+     * If false, return after validation is complete (for USER_MANAGED) or after publishing starts (for AUTOMATIC).
+     */
+    @Parameter(property = "central.waitForCompletion", defaultValue = "false")
+    protected boolean waitForCompletion;
+
     @Override
     public void execute() throws MojoFailureException {
         try {
@@ -85,14 +89,14 @@ public class RcUploadMojo extends AbstractCentralMojo {
 
             initClient();
 
-            // Validate publishing type
-            validatePublishingType();
+            // Validate automatic publishing parameter
+            validateAutomaticPublishing();
 
             // Validate artifact file
             validateArtifactFile();
 
             // Upload bundle directly
-            String deploymentId = uploadBundle(artifactFile.toPath(), determineBundleName(), publishingType);
+            String deploymentId = uploadBundle(artifactFile.toPath(), determineBundleName(), getPublishingType());
             getLog().info("Upload initiated with deployment ID: " + deploymentId);
 
             // Wait for validation
@@ -135,30 +139,22 @@ public class RcUploadMojo extends AbstractCentralMojo {
     }
 
     /**
-     * Validates the publishing type parameter.
+     * Gets the publishing type string based on the automaticPublishing boolean.
      */
-    private void validatePublishingType() throws MojoFailureException {
-        if (publishingType == null || publishingType.trim().isEmpty()) {
-            throw new MojoFailureException("Publishing type cannot be null or empty");
-        }
+    private String getPublishingType() {
+        return automaticPublishing ? DeploymentConstants.PUBLISHING_TYPE_AUTOMATIC : DeploymentConstants.PUBLISHING_TYPE_USER_MANAGED;
+    }
 
-        String normalizedType = publishingType.trim().toUpperCase();
-        if (!DeploymentConstants.PUBLISHING_TYPE_USER_MANAGED.equals(normalizedType) &&
-                !DeploymentConstants.PUBLISHING_TYPE_AUTOMATIC.equals(normalizedType)) {
-            throw new MojoFailureException(
-                    "Invalid publishing type: " + publishingType + ". " +
-                            "Available values: " + DeploymentConstants.PUBLISHING_TYPE_USER_MANAGED + ", " +
-                            DeploymentConstants.PUBLISHING_TYPE_AUTOMATIC);
-        }
-
-        // Normalize the value for consistency
-        publishingType = normalizedType;
-
-        getLog().info("Using publishing type: " + publishingType);
-        if (DeploymentConstants.PUBLISHING_TYPE_USER_MANAGED.equals(publishingType)) {
-            getLog().info("Deployment will stop in VALIDATED state and require manual approval");
-        } else {
+    /**
+     * Validates the automatic publishing parameter and logs the selected mode.
+     */
+    private void validateAutomaticPublishing() {
+        String publishingTypeStr = getPublishingType();
+        getLog().info("Using publishing type: " + publishingTypeStr);
+        if (automaticPublishing) {
             getLog().info("Deployment will automatically progress to PUBLISHING when validation passes");
+        } else {
+            getLog().info("Deployment will stop in VALIDATED state and require manual approval");
         }
     }
 
@@ -180,7 +176,7 @@ public class RcUploadMojo extends AbstractCentralMojo {
 
         long startTime = System.currentTimeMillis();
         long maxWaitMillis = maxWaitTime * 1000L;
-        boolean isAutomatic = DeploymentConstants.PUBLISHING_TYPE_AUTOMATIC.equals(publishingType);
+        boolean isAutomatic = automaticPublishing;
 
         while (System.currentTimeMillis() - startTime < maxWaitMillis) {
             Map<String, Object> status = client.getDeploymentStatus(deploymentId);
@@ -188,25 +184,46 @@ public class RcUploadMojo extends AbstractCentralMojo {
 
             if (DeploymentConstants.VALIDATED_STATE.equals(state)) {
                 Object errors = status.get(DeploymentConstants.ERRORS);
-                if (errors == null || (errors instanceof java.util.List<?> list && list.isEmpty())) {
+                if (hasNoErrors(errors)) {
                     if (isAutomatic) {
                         getLog().info("Deployment validated! Automatic publishing is in progress...");
-                        // For automatic mode, continue waiting for PUBLISHED state
-                        waitForPublishing(deploymentId);
-                        return;
+                        if (waitForCompletion) {
+                            // For automatic mode, continue waiting for PUBLISHED state
+                            waitForPublishing(deploymentId);
+                            return;
+                        } else {
+                            getLog().info("Automatic publishing started.");
+                            logDeploymentStatus(status);
+                            return;
+                        }
                     } else {
                         getLog().info("Upload to Maven Central Portal successful!");
                         getLog().info("Deployment is in VALIDATED state and ready for manual approval.");
-                        getLog().info("Deployment status: " + status);
+                        logDeploymentStatus(status);
                         return;
                     }
                 } else {
-                    throw new MojoFailureException("Deployment validated but has errors: " + errors);
+                    String errorMessage = formatDeploymentErrors(status);
+                    throw new MojoFailureException("Deployment validated but has errors: " + errorMessage);
                 }
             } else if (DeploymentConstants.PUBLISHED_STATE.equals(state)) {
                 getLog().info("Upload and publishing to Maven Central Portal successful!");
-                getLog().info("Deployment status: " + status);
+                logDeploymentStatus(status);
                 return;
+            } else if (DeploymentConstants.PUBLISHING_STATE.equals(state)) {
+                if (waitForCompletion) {
+                    getLog().info("Deployment is being uploaded to Maven Central: " + state);
+                    try {
+                        TimeUnit.SECONDS.sleep(pollInterval);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new MojoFailureException("Wait for validation was interrupted", e);
+                    }
+                } else {
+                    getLog().info("Publishing started. Use 'waitForCompletion=true' to wait for completion.");
+                    logDeploymentStatus(status);
+                    return;
+                }
             } else if (DeploymentConstants.PENDING_STATE.equals(state)
                     || DeploymentConstants.VALIDATING_STATE.equals(state)) {
                 getLog().info("Upload is being processed: " + state);
@@ -217,7 +234,8 @@ public class RcUploadMojo extends AbstractCentralMojo {
                     throw new MojoFailureException("Wait for validation was interrupted", e);
                 }
             } else if (DeploymentConstants.FAILED_STATE.equals(state)) {
-                throw new MojoFailureException("Upload failed with status: " + status);
+                String errorMessage = formatDeploymentErrors(status);
+                throw new MojoFailureException("Upload failed: " + errorMessage);
             } else {
                 throw new MojoFailureException("Upload has unexpected status: " + status);
             }
@@ -241,10 +259,11 @@ public class RcUploadMojo extends AbstractCentralMojo {
 
             if (DeploymentConstants.PUBLISHED_STATE.equals(state)) {
                 getLog().info("Upload and publishing to Maven Central Portal successful!");
-                getLog().info("Deployment status: " + status);
+                logDeploymentStatus(status);
                 return;
             } else if (DeploymentConstants.FAILED_STATE.equals(state)) {
-                throw new MojoFailureException("Publishing failed with status: " + status);
+                String errorMessage = formatDeploymentErrors(status);
+                throw new MojoFailureException("Publishing failed: " + errorMessage);
             } else {
                 getLog().info("Publishing in progress: " + state);
                 try {
@@ -257,5 +276,94 @@ public class RcUploadMojo extends AbstractCentralMojo {
         }
 
         throw new MojoFailureException("Timeout waiting for deployment publishing after " + maxWaitTimePublishing + " seconds");
+    }
+
+    /**
+     * Formats deployment errors in a human-readable way.
+     */
+    private String formatDeploymentErrors(Map<String, Object> status) {
+        StringBuilder errorMessage = new StringBuilder();
+        
+        // Add deployment info
+        Object deploymentId = status.get(DeploymentConstants.DEPLOYMENT_ID);
+        Object deploymentName = status.get("deploymentName");
+        if (deploymentId != null) {
+            errorMessage.append("\nDeployment ID: ").append(deploymentId);
+        }
+        if (deploymentName != null) {
+            errorMessage.append("\nDeployment Name: ").append(deploymentName);
+        }
+        
+        // Format errors
+        Object errorsObj = status.get(DeploymentConstants.ERRORS);
+        if (errorsObj instanceof Map<?, ?> errors) {
+            errorMessage.append("\nErrors:");
+            for (Map.Entry<?, ?> entry : errors.entrySet()) {
+                String component = entry.getKey().toString();
+                Object componentErrors = entry.getValue();
+                
+                errorMessage.append("\n  Component: ").append(component);
+                if (componentErrors instanceof java.util.List<?> errorList) {
+                    for (Object error : errorList) {
+                        errorMessage.append("\n    - ").append(error.toString());
+                    }
+                } else {
+                    errorMessage.append("\n    - ").append(componentErrors.toString());
+                }
+            }
+        } else if (errorsObj != null) {
+            errorMessage.append("\nErrors: ").append(errorsObj.toString());
+        }
+        
+        return errorMessage.toString();
+    }
+
+    /**
+     * Checks if there are no errors in the deployment.
+     * Handles various error formats: null, empty List, empty Map.
+     */
+    private boolean hasNoErrors(Object errors) {
+        if (errors == null) {
+            return true;
+        }
+        
+        if (errors instanceof java.util.List<?> list) {
+            return list.isEmpty();
+        }
+        
+        if (errors instanceof Map<?, ?> map) {
+            return map.isEmpty();
+        }
+        
+        // If it's a string, check if it's empty or just whitespace
+        String errorStr = errors.toString().trim();
+        return errorStr.isEmpty() || "{}".equals(errorStr) || "[]".equals(errorStr);
+    }
+
+    /**
+     * Logs deployment status in a human-readable format.
+     */
+    private void logDeploymentStatus(Map<String, Object> status) {
+        Object deploymentId = status.get(DeploymentConstants.DEPLOYMENT_ID);
+        Object deploymentName = status.get("deploymentName");
+        Object deploymentState = status.get(DeploymentConstants.DEPLOYMENT_STATE);
+        Object purls = status.get("purls");
+
+        getLog().info("Deployment Details:");
+        if (deploymentId != null) {
+            getLog().info("  ID: " + deploymentId);
+        }
+        if (deploymentName != null) {
+            getLog().info("  Name: " + deploymentName);
+        }
+        if (deploymentState != null) {
+            getLog().info("  State: " + deploymentState);
+        }
+        if (purls instanceof java.util.List<?> purlList && !purlList.isEmpty()) {
+            getLog().info("  Components:");
+            for (Object purl : purlList) {
+                getLog().info("    - " + purl);
+            }
+        }
     }
 }

@@ -62,20 +62,28 @@ public class RcPublishMojo extends AbstractCentralMojo {
             Map<String, Object> status = client.getDeploymentStatus(effectiveDeploymentId);
             Object state = status.get(DeploymentConstants.DEPLOYMENT_STATE);
             getLog().info("Current deployment state: " + state);
-            if (isValidatedState(state)) {
-                getLog().info("Deployment is VALIDATED.");
+            if (isPublishableState(state)) {
+                if (DeploymentConstants.VALIDATED_STATE.equals(state.toString())) {
+                    getLog().info("Deployment is VALIDATED.");
+                } else if (DeploymentConstants.PUBLISHING_STATE.equals(state.toString())) {
+                    getLog().info("Deployment is already PUBLISHING.");
+                }
                 if (dryRun) {
                     getLog().info("[DRY RUN] Would publish deployment: " + effectiveDeploymentId);
                 } else {
-                    getLog().info("Publishing deployment...");
-                    Map<String, Object> result = client.publishDeployment(effectiveDeploymentId);
-                    getLog().info("Publish result: " + result);
+                    if (DeploymentConstants.PUBLISHING_STATE.equals(state.toString())) {
+                        getLog().info("Deployment is already being published, no action needed.");
+                    } else {
+                        getLog().info("Publishing deployment...");
+                        Map<String, Object> result = client.publishDeployment(effectiveDeploymentId);
+                        getLog().info("Publish result: " + result);
+                    }
                 }
             } else {
-                getLog().warn("DeploymentId " + effectiveDeploymentId + " is not in VALIDATED state. Current state: "
+                getLog().warn("DeploymentId " + effectiveDeploymentId + " is not in a publishable state (VALIDATED or PUBLISHING). Current state: "
                         + state);
                 throw new IllegalArgumentException("DeploymentId " + effectiveDeploymentId
-                        + " is not in VALIDATED state. Current state: " + state);
+                        + " is not in a publishable state (VALIDATED or PUBLISHING). Current state: " + state);
             }
         } catch (Exception e) {
             getLog().error("Failed to publish deployment", e);
@@ -97,7 +105,7 @@ public class RcPublishMojo extends AbstractCentralMojo {
                 for (Object depObj : deployments) {
                     if (depObj instanceof Map<?, ?> dep) {
                         Object depState = dep.get(DeploymentConstants.DEPLOYMENT_STATE);
-                        if (!isValidatedState(depState))
+                        if (!DeploymentConstants.VALIDATED_STATE.equals(depState.toString()))
                             continue;
                         Object componentsObj = dep.get(DeploymentConstants.DEPLOYED_COMPONENT_VERSIONS);
                         if (componentsObj instanceof java.util.List<?> components) {
@@ -120,9 +128,11 @@ public class RcPublishMojo extends AbstractCentralMojo {
     }
 
     /**
-     * Checks if the deployment state is VALIDATED.
+     * Checks if the deployment state is publishable (VALIDATED or already PUBLISHING).
      */
-    private boolean isValidatedState(Object stateObj) {
-        return stateObj != null && DeploymentConstants.VALIDATED_STATE.equals(stateObj.toString());
+    private boolean isPublishableState(Object stateObj) {
+        return stateObj != null && 
+               (DeploymentConstants.VALIDATED_STATE.equals(stateObj.toString()) ||
+                DeploymentConstants.PUBLISHING_STATE.equals(stateObj.toString()));
     }
 }

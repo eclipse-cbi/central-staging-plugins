@@ -13,9 +13,11 @@ Maven plugin for Sonatype Central Portal API ([API Doc](https://central.sonatype
   - [Features](#features)
   - [Plugin Parameters](#plugin-parameters)
   - [Plugin Goals](#plugin-goals)
+    - [Publishing Mode Examples](#publishing-mode-examples)
   - [Creating an Artifact Bundle for Upload](#creating-an-artifact-bundle-for-upload)
     - [Bundle Structure Example](#bundle-structure-example)
     - [Requirements](#requirements)
+    - [Deployment States](#deployment-states)
   - [Authenticate](#authenticate)
   - [Github Integration Example](#github-integration-example)
   - [Build project](#build-project)
@@ -53,10 +55,11 @@ Maven plugin for Sonatype Central Portal API ([API Doc](https://central.sonatype
 | central.dryRun           | If true, only simulate the release/drop (no action performed)                                     | false                                         | true                                          |
 | central.artifactFile     | Path to the artifact file to upload (zip file containing Maven artifacts)                         |                                               | /path/to/bundle.zip                           |
 | central.bundleName       | Custom name for the upload bundle (defaults to artifact filename without extension)               |                                               | my-custom-bundle                              |
-| central.publishingType   | Publishing type for uploads (USER_MANAGED or AUTOMATIC)                                           | USER_MANAGED                                  | AUTOMATIC                                     |
+| central.automaticPublishing | Whether to automatically publish after validation (true=AUTOMATIC, false=USER_MANAGED)          | false                                         | true                                          |
 | central.maxWaitTime      | Maximum wait time in seconds for validation to complete                                           | 300                                           | 600                                           |
 | central.maxWaitTimePublishing | Maximum wait time in seconds for publishing to complete                                      | 600                                           | 900                                           |
 | central.pollInterval     | Polling interval in seconds when checking deployment status                                       | 5                                             | 10                                            |
+| central.waitForCompletion | If true, wait for complete publishing process. If false, return after validation/publishing starts | false                                          | true                                         |
 
 You can provide your Bearer token either via the command line or securely via your Maven `settings.xml` file.
 
@@ -65,10 +68,26 @@ You can provide your Bearer token either via the command line or securely via yo
 | Goal/Function | Description                                                                      | Main Parameters                              | Example Command                                                                                                                                       |
 | ------------- | -------------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | rc-status     | List publication status for a component                                          | namespace, name, version, bearerToken        | mvn central-staging-plugins:rc-status -Dcentral.namespace=org.eclipse.cbi -Dcentral.name=org.eclipse.cbi.tycho.example-parent -Dcentral.version=1.0.0 |
-| rc-upload     | Upload artifact bundle to Central Portal with validation waiting                 | artifactFile, bundleName, publishingType, bearerToken | mvn central-staging-plugins:rc-upload -Dcentral.artifactFile=/path/to/bundle.zip -Dcentral.publishingType=USER_MANAGED |
+| rc-upload     | Upload artifact bundle to Central Portal with validation waiting                 | artifactFile, bundleName, automaticPublishing, waitForCompletion, bearerToken | mvn central-staging-plugins:rc-upload -Dcentral.artifactFile=/path/to/bundle.zip -Dcentral.automaticPublishing=false -Dcentral.waitForCompletion=true |
 | rc-publish    | Publish a deployment (publish if validated, supports dry run)                    | deploymentId (optional), bearerToken, dryRun | mvn central-staging-plugins:rc-publish -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true                                      |
 | rc-drop      | Drop (delete) a deployment (supports dry run)                                    | deploymentId, bearerToken, dryRun            | mvn central-staging-plugins:rc-drop -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true                                        |
 | rc-list       | List all deployments for a namespace, with state, date, and errors per component | namespace, bearerToken                       | mvn central-staging-plugins:rc-list -Dcentral.namespace=org.eclipse.cbi                                                                               |
+
+### Publishing Mode Examples
+
+The `automaticPublishing` parameter controls the publishing behavior:
+
+**Manual Publishing (default)**: Upload, validate, and wait for manual approval
+```bash
+mvn central-staging-plugins:rc-upload -Dcentral.artifactFile=/path/to/bundle.zip
+# or explicitly
+mvn central-staging-plugins:rc-upload -Dcentral.artifactFile=/path/to/bundle.zip -Dcentral.automaticPublishing=false
+```
+
+**Automatic Publishing**: Upload, validate, and automatically publish to Maven Central
+```bash
+mvn central-staging-plugins:rc-upload -Dcentral.artifactFile=/path/to/bundle.zip -Dcentral.automaticPublishing=true -Dcentral.waitForCompletion=true
+```
 
 ## Creating an Artifact Bundle for Upload
 
@@ -80,7 +99,7 @@ See doc: https://central.sonatype.org/publish/publish-portal-upload/
 
 For a project with namespace `com.sonatype.central.example`, component `example_java_project`, and version `0.1.0`:
 
-```
+```shell
 bundle.zip
 └── com/
     └── sonatype/
@@ -120,6 +139,16 @@ bundle.zip
 - **Multiple components**: A single bundle can contain multiple components
 - **Layout**: Must follow Maven Repository Layout with proper directory structure
 
+### Deployment States
+
+The deployment state can have the following values:
+
+- **PENDING**: A deployment is uploaded and waiting for processing by the validation service
+- **VALIDATING**: A deployment is being processed by the validation service  
+- **VALIDATED**: A deployment has passed validation and is waiting on a user to manually publish via the Central Portal UI
+- **PUBLISHING**: A deployment has been either automatically or manually published and is being uploaded to Maven Central
+- **PUBLISHED**: A deployment has successfully been uploaded to Maven Central
+- **FAILED**: A deployment has encountered an error (additional context will be present in an errors field)
 
 ## Authenticate 
 
@@ -208,8 +237,8 @@ mvn clean package
 
 ## License
 
-Eclipse Public License v. 2.0 ([LICENSE](LICENSE))
+Eclipse Public License v.2.0 ([LICENSE](LICENSE))
 
 ## Contributing
 
-Contributions are welcome! Please submit issues and pull requests via GitHub.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
