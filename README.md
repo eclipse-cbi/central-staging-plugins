@@ -13,6 +13,9 @@ Maven plugin for Sonatype Central Portal API ([API Doc](https://central.sonatype
   - [Features](#features)
   - [Plugin Parameters](#plugin-parameters)
   - [Plugin Goals](#plugin-goals)
+  - [Creating an Artifact Bundle for Upload](#creating-an-artifact-bundle-for-upload)
+    - [Bundle Structure Example](#bundle-structure-example)
+    - [Requirements](#requirements)
   - [Authenticate](#authenticate)
   - [Github Integration Example](#github-integration-example)
   - [Build project](#build-project)
@@ -23,6 +26,7 @@ Maven plugin for Sonatype Central Portal API ([API Doc](https://central.sonatype
 ## Features
 
 - Authenticate with Bearer token (from CLI or Maven settings.xml)
+- Upload artifact bundles to Central Portal with configurable publishing types
 - Check if a component is published in Central
 - Retrieve and display deployment status (state, errors, date)
 - List all deployments for a namespace, including state, creation date, and errors per component
@@ -47,6 +51,12 @@ Maven plugin for Sonatype Central Portal API ([API Doc](https://central.sonatype
 | central.removeAll        | If true, drop all deployments in the namespace                                                     | false                                         | true                                          |
 | central.removeFailedOnly | If true, only drop deployments in FAILED state (used with removeAll or when dropping by id/latest) | true                                          | true                                          |
 | central.dryRun           | If true, only simulate the release/drop (no action performed)                                     | false                                         | true                                          |
+| central.artifactFile     | Path to the artifact file to upload (zip file containing Maven artifacts)                         |                                               | /path/to/bundle.zip                           |
+| central.bundleName       | Custom name for the upload bundle (defaults to artifact filename without extension)               |                                               | my-custom-bundle                              |
+| central.publishingType   | Publishing type for uploads (USER_MANAGED or AUTOMATIC)                                           | USER_MANAGED                                  | AUTOMATIC                                     |
+| central.maxWaitTime      | Maximum wait time in seconds for validation to complete                                           | 300                                           | 600                                           |
+| central.maxWaitTimePublishing | Maximum wait time in seconds for publishing to complete                                      | 600                                           | 900                                           |
+| central.pollInterval     | Polling interval in seconds when checking deployment status                                       | 5                                             | 10                                            |
 
 You can provide your Bearer token either via the command line or securely via your Maven `settings.xml` file.
 
@@ -55,9 +65,61 @@ You can provide your Bearer token either via the command line or securely via yo
 | Goal/Function | Description                                                                      | Main Parameters                              | Example Command                                                                                                                                       |
 | ------------- | -------------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | rc-status     | List publication status for a component                                          | namespace, name, version, bearerToken        | mvn central-staging-plugins:rc-status -Dcentral.namespace=org.eclipse.cbi -Dcentral.name=org.eclipse.cbi.tycho.example-parent -Dcentral.version=1.0.0 |
+| rc-upload     | Upload artifact bundle to Central Portal with validation waiting                 | artifactFile, bundleName, publishingType, bearerToken | mvn central-staging-plugins:rc-upload -Dcentral.artifactFile=/path/to/bundle.zip -Dcentral.publishingType=USER_MANAGED |
 | rc-publish    | Publish a deployment (publish if validated, supports dry run)                    | deploymentId (optional), bearerToken, dryRun | mvn central-staging-plugins:rc-publish -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true                                      |
 | rc-drop      | Drop (delete) a deployment (supports dry run)                                    | deploymentId, bearerToken, dryRun            | mvn central-staging-plugins:rc-drop -Dcentral.deploymentId=xxxxx-xxxxx-xxxx-xxx-xxxxxxx -Dcentral.dryRun=true                                        |
 | rc-list       | List all deployments for a namespace, with state, date, and errors per component | namespace, bearerToken                       | mvn central-staging-plugins:rc-list -Dcentral.namespace=org.eclipse.cbi                                                                               |
+
+## Creating an Artifact Bundle for Upload
+
+The `rc-upload` goal requires a bundle file (zip archive) that follows the [Maven Repository Layout](https://maven.apache.org/repository/layout.html). The bundle must contain your artifacts with all required files: JAR, POM, sources, javadoc, and their corresponding signatures and checksums.
+
+See doc: https://central.sonatype.org/publish/publish-portal-upload/
+
+### Bundle Structure Example
+
+For a project with namespace `com.sonatype.central.example`, component `example_java_project`, and version `0.1.0`:
+
+```
+bundle.zip
+└── com/
+    └── sonatype/
+        └── central/
+            └── example/
+                └── example_java_project/
+                    └── 0.1.0/
+                        ├── example_java_project-0.1.0.jar
+                        ├── example_java_project-0.1.0.jar.asc
+                        ├── example_java_project-0.1.0.jar.md5
+                        ├── example_java_project-0.1.0.jar.sha1
+                        ├── example_java_project-0.1.0.pom
+                        ├── example_java_project-0.1.0.pom.asc
+                        ├── example_java_project-0.1.0.pom.md5
+                        ├── example_java_project-0.1.0.pom.sha1
+                        ├── example_java_project-0.1.0-sources.jar
+                        ├── example_java_project-0.1.0-sources.jar.asc
+                        ├── example_java_project-0.1.0-sources.jar.md5
+                        ├── example_java_project-0.1.0-sources.jar.sha1
+                        ├── example_java_project-0.1.0-javadoc.jar
+                        ├── example_java_project-0.1.0-javadoc.jar.asc
+                        ├── example_java_project-0.1.0-javadoc.jar.md5
+                        └── example_java_project-0.1.0-javadoc.jar.sha1
+```
+
+### Requirements
+
+- **Archive format**: zip, tar.gz, or other common archive formats
+- **Maximum size**: 1GB per upload
+- **Required files per artifact**:
+  - Main JAR file
+  - POM file
+  - Sources JAR (`-sources.jar`)
+  - Javadoc JAR (`-javadoc.jar`)
+  - GPG signatures (`.asc` files) for all above
+  - Checksums (`.md5` and `.sha1` files) for all above
+- **Multiple components**: A single bundle can contain multiple components
+- **Layout**: Must follow Maven Repository Layout with proper directory structure
+
 
 ## Authenticate 
 

@@ -4,6 +4,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugin.MojoFailureException;
+import org.eclipse.cbi.central.DeploymentConstants;
 import java.util.Map;
 
 @Mojo(name = "rc-list", defaultPhase = LifecyclePhase.NONE)
@@ -37,7 +38,7 @@ public class RcListMojo extends AbstractCentralMojo {
             initClient();
             String effectiveNamespace = (namespace != null && !namespace.isEmpty()) ? namespace : project.getGroupId();
             Map<String, Object> result = client.listDeployments(effectiveNamespace, 0, 500, "createTimestamp", "desc");
-            Object deploymentsObj = result.get("deployments");
+            Object deploymentsObj = result.get(DeploymentConstants.DEPLOYMENTS);
             if (deploymentsObj instanceof java.util.List) {
                 java.util.List<?> deployments = (java.util.List<?>) deploymentsObj;
                 if (deployments.isEmpty()) {
@@ -72,12 +73,12 @@ public class RcListMojo extends AbstractCentralMojo {
             return;
         }
         Map<?, ?> dep = (Map<?, ?>) depObj;
-        Object deploymentId = dep.get("deploymentId");
-        Object deploymentState = dep.get("deploymentState");
-        Object createTimestamp = dep.get("createTimestamp");
+        Object deploymentId = dep.get(DeploymentConstants.DEPLOYMENT_ID);
+        Object deploymentState = dep.get(DeploymentConstants.DEPLOYMENT_STATE);
+        Object createTimestamp = dep.get(DeploymentConstants.CREATE_TIMESTAMP);
         String dateStr = formatTimestamp(createTimestamp);
         getLog().info("DeploymentId: " + deploymentId + ", State: " + deploymentState + ", Created: " + dateStr);
-        Object componentsObj = dep.get("deployedComponentVersions");
+        Object componentsObj = dep.get(DeploymentConstants.DEPLOYED_COMPONENT_VERSIONS);
         if (componentsObj instanceof java.util.List) {
             printComponents((java.util.List<?>) componentsObj);
         }
@@ -107,8 +108,8 @@ public class RcListMojo extends AbstractCentralMojo {
                 continue;
             }
             Map<?, ?> comp = (Map<?, ?>) compObj;
-            Object purl = comp.get("purl");
-            Object errorsObj = comp.get("errors");
+            Object purl = comp.get(DeploymentConstants.PURL);
+            Object errorsObj = comp.get(DeploymentConstants.ERRORS);
             getLog().info("  Component: " + purl);
             printErrors(errorsObj);
         }

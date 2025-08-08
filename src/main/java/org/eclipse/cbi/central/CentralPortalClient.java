@@ -21,11 +21,11 @@ import java.util.Map;
 public class CentralPortalClient {
     // Context strings for error descriptions
     private static final String CTX_DEPLOYMENT_NOT_FOUND = "Deployment not found";
-    // Context strings for error descriptions
     private static final String CTX_CHECK_PUBLISHED = "Check published";
     private static final String CTX_GET_DEPLOYMENT_STATUS = "Get deployment status";
     private static final String CTX_PUBLISH_DEPLOYMENT = "Publish deployment";
     private static final String CTX_LIST_DEPLOYMENTS = "List deployments";
+    private static final String CTX_UPLOAD_BUNDLE = "Upload bundle";
     // Generic error codes with parameterized descriptions
     private static final Map<Integer, String> ERROR_CODES = Map.of(
             400, "Bad request",
@@ -216,6 +216,53 @@ public class CentralPortalClient {
                     401, errorDescription(401, CTX_LIST_DEPLOYMENTS),
                     403, errorDescription(403, CTX_LIST_DEPLOYMENTS),
                     500, errorDescription(500, CTX_LIST_DEPLOYMENTS)), true);
+        }
+    }
+
+    /**
+     * Uploads a bundle (zip file) to Central Portal for deployment.
+     *
+     * @param bundleFile     The path to the zip file to upload
+     * @param bundleName     The name for the bundle
+     * @param publishingType The publishing type (e.g., "USER_MANAGED")
+     * @return The deployment ID as a string
+     * @throws IOException if the request fails
+     */
+    public String uploadBundle(java.nio.file.Path bundleFile, String bundleName, String publishingType) throws IOException {
+        String url = baseUrl + "/upload?name=" + bundleName + "&publishingType=" + publishingType;
+        
+        // Create multipart form data for file upload
+        RequestBody fileBody = RequestBody.create(bundleFile.toFile(), MediaType.parse("application/zip"));
+        RequestBody formBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("bundle", bundleFile.getFileName().toString(), fileBody)
+                .build();
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader(HEADER_AUTH, "Bearer " + bearerToken)
+                .addHeader("accept", "text/plain")
+                .post(formBody)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            int code = response.code();
+            String body = response.body() != null ? response.body().string() : "";
+            
+            if (code == 201 || code == 200) {
+                // The deployment ID is returned as plain text
+                return body.trim();
+            } else if (code == 400) {
+                throw new IOException("Wrong authorization data (user/password or token) - " + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
+            } else if (code == 401) {
+                throw new IOException("The user does not have an active session or is not authenticated - " + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
+            } else if (code == 403) {
+                throw new IOException("The user is not authorized to perform this action - " + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
+            } else if (code == 500) {
+                throw new IOException("Return error message on bundle upload - " + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
+            } else {
+                throw new IOException("Unexpected HTTP code " + code + ": " + body);
+            }
         }
     }
 }

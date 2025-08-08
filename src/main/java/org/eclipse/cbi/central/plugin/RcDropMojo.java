@@ -14,13 +14,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugin.MojoFailureException;
+import org.eclipse.cbi.central.DeploymentConstants;
 import java.util.Map;
 
 @Mojo(name = "rc-drop", defaultPhase = LifecyclePhase.NONE)
 public class RcDropMojo extends AbstractCentralMojo {
-
-    private static final String DEPLOYMENT_STATE = "deploymentState";
-    private static final String FAILED_STATE = "FAILED";
 
     /**
      * If true, only simulate the drop (do not actually drop deployments).
@@ -63,10 +61,11 @@ public class RcDropMojo extends AbstractCentralMojo {
             } else if (deploymentId != null && !deploymentId.isEmpty()) {
                 if (removeFailedOnly) {
                     Map<String, Object> status = client.getDeploymentStatus(deploymentId);
-                    Object state = status.get(DEPLOYMENT_STATE);
-                    if (!FAILED_STATE.equals(String.valueOf(state))) {
+                    Object state = status.get(DeploymentConstants.DEPLOYMENT_STATE);
+                    if (!DeploymentConstants.FAILED_STATE.equals(String.valueOf(state))) {
                         getLog().info(
-                                "Deployment " + deploymentId + " is not in " + FAILED_STATE + " state. Skipping drop.");
+                                "Deployment " + deploymentId + " is not in " + DeploymentConstants.FAILED_STATE
+                                        + " state. Skipping drop.");
                         return;
                     }
                 }
@@ -81,12 +80,12 @@ public class RcDropMojo extends AbstractCentralMojo {
                 String namespace = project.getGroupId();
                 Map<String, Object> deploymentsResult = client.listDeployments(namespace, 0, 1, "createTimestamp",
                         "desc");
-                Object deploymentsObj = deploymentsResult.get("deployments");
+                Object deploymentsObj = deploymentsResult.get(DeploymentConstants.DEPLOYMENTS);
                 if (deploymentsObj instanceof java.util.List<?> deployments && !deployments.isEmpty()) {
                     Map<?, ?> latestDep = (Map<?, ?>) deployments.get(0);
-                    String latestId = String.valueOf(latestDep.get("deploymentId"));
-                    String state = String.valueOf(latestDep.get(DEPLOYMENT_STATE));
-                    if (removeFailedOnly && !FAILED_STATE.equals(state)) {
+                    String latestId = String.valueOf(latestDep.get(DeploymentConstants.DEPLOYMENT_ID));
+                    String state = String.valueOf(latestDep.get(DeploymentConstants.DEPLOYMENT_STATE));
+                    if (removeFailedOnly && !DeploymentConstants.FAILED_STATE.equals(state)) {
                         getLog().info("Latest deployment " + latestId + " is not in FAILED state. Skipping drop.");
                         return;
                     }
@@ -110,14 +109,6 @@ public class RcDropMojo extends AbstractCentralMojo {
     /**
      * Drops all deployments in the namespace. If onlyFailed is true, only drops
      * deployments in FAILED state.
-     */
-    private void dropAllDeployments(boolean onlyFailed) throws MojoFailureException {
-        dropAllDeployments(onlyFailed, false);
-    }
-
-    /**
-     * Drops all deployments in the namespace. If onlyFailed is true, only drops
-     * deployments in FAILED state.
      * If dryRun is true, only simulates the drop.
      */
     private void dropAllDeployments(boolean onlyFailed, boolean dryRun) throws MojoFailureException {
@@ -125,13 +116,14 @@ public class RcDropMojo extends AbstractCentralMojo {
         try {
             Map<String, Object> deploymentsResult = client.listDeployments(namespace, 0, 500, "createTimestamp",
                     "desc");
-            Object deploymentsObj = deploymentsResult.get("deployments");
+            Object deploymentsObj = deploymentsResult.get(DeploymentConstants.DEPLOYMENTS);
             if (deploymentsObj instanceof java.util.List<?> deployments) {
                 for (Object depObj : deployments) {
-                    if (depObj instanceof Map<?, ?> dep) {
-                        if (!onlyFailed || FAILED_STATE.equals(String.valueOf(dep.get(DEPLOYMENT_STATE)))) {
-                            dropSingleDeployment(dep, dryRun);
-                        }
+                    if (depObj instanceof Map<?, ?> dep &&
+                            (!onlyFailed || DeploymentConstants.FAILED_STATE
+                                    .equals(String.valueOf(dep.get(DeploymentConstants.DEPLOYMENT_STATE))))) {
+                        dropSingleDeployment(dep, dryRun);
+
                     }
                 }
             } else {
@@ -144,19 +136,12 @@ public class RcDropMojo extends AbstractCentralMojo {
     }
 
     /**
-     * Drops a single deployment and logs the result or any error.
-     */
-    private void dropSingleDeployment(Map<?, ?> dep) throws MojoFailureException {
-        dropSingleDeployment(dep, false);
-    }
-
-    /**
      * Drops a single deployment and logs the result or any error. If dryRun is
      * true, only simulates the drop.
      */
     private void dropSingleDeployment(Map<?, ?> dep, boolean dryRun) throws MojoFailureException {
-        String id = String.valueOf(dep.get("deploymentId"));
-        String state = String.valueOf(dep.get(DEPLOYMENT_STATE));
+        String id = String.valueOf(dep.get(DeploymentConstants.DEPLOYMENT_ID));
+        String state = String.valueOf(dep.get(DeploymentConstants.DEPLOYMENT_STATE));
         if (dryRun) {
             getLog().info("[DRY RUN] Would drop deployment " + id + " (state: " + state + ")");
             return;

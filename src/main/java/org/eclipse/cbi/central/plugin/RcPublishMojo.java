@@ -13,6 +13,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugin.MojoFailureException;
+import org.eclipse.cbi.central.DeploymentConstants;
 import java.util.Map;
 
 @Mojo(name = "rc-publish", defaultPhase = LifecyclePhase.NONE)
@@ -22,10 +23,6 @@ public class RcPublishMojo extends AbstractCentralMojo {
      */
     @Parameter(property = "central.dryRun", defaultValue = "false")
     protected boolean dryRun;
-    /**
-     * The deployment state value representing a validated deployment.
-     */
-    private static final String STATE_VALIDATED = "VALIDATED";
 
     /**
      * The deployment ID to release. If not set, the latest VALIDATED deployment for
@@ -52,8 +49,8 @@ public class RcPublishMojo extends AbstractCentralMojo {
                 effectiveDeploymentId = findLatestValidatedDeploymentId(project.getGroupId(), project.getArtifactId(),
                         project.getVersion());
                 if (effectiveDeploymentId == null) {
-                    getLog().warn("No VALIDATED deployment found for GAV: " + project.getGroupId() + ":"
-                            + project.getArtifactId() + ":" + project.getVersion());
+                    getLog().warn("No VALIDATED deployment found for GAV: " +
+                            project.getGroupId() + ":" + project.getArtifactId() + ":" + project.getVersion());
                     throw new IllegalArgumentException("No VALIDATED deployment found for GAV: " + project.getGroupId()
                             + ":" + project.getArtifactId() + ":" + project.getVersion());
                 }
@@ -63,7 +60,7 @@ public class RcPublishMojo extends AbstractCentralMojo {
             }
             getLog().info("Checking deployment status for deploymentId: " + effectiveDeploymentId);
             Map<String, Object> status = client.getDeploymentStatus(effectiveDeploymentId);
-            Object state = status.get("deploymentState");
+            Object state = status.get(DeploymentConstants.DEPLOYMENT_STATE);
             getLog().info("Current deployment state: " + state);
             if (isValidatedState(state)) {
                 getLog().info("Deployment is VALIDATED.");
@@ -94,21 +91,21 @@ public class RcPublishMojo extends AbstractCentralMojo {
             String namespace = groupId;
             Map<String, Object> deploymentsResult = client.listDeployments(namespace, 0, 500, "createTimestamp",
                     "desc");
-            Object deploymentsObj = deploymentsResult.get("deployments");
+            Object deploymentsObj = deploymentsResult.get(DeploymentConstants.DEPLOYMENTS);
             String gavPurlPrefix = String.format("pkg:maven/%s/%s@%s", groupId, artifactId, version);
             if (deploymentsObj instanceof java.util.List<?> deployments) {
                 for (Object depObj : deployments) {
                     if (depObj instanceof Map<?, ?> dep) {
-                        Object depState = dep.get("deploymentState");
+                        Object depState = dep.get(DeploymentConstants.DEPLOYMENT_STATE);
                         if (!isValidatedState(depState))
                             continue;
-                        Object componentsObj = dep.get("deployedComponentVersions");
+                        Object componentsObj = dep.get(DeploymentConstants.DEPLOYED_COMPONENT_VERSIONS);
                         if (componentsObj instanceof java.util.List<?> components) {
                             for (Object compObj : components) {
                                 if (compObj instanceof Map<?, ?> comp) {
-                                    Object purlObj = comp.get("purl");
+                                    Object purlObj = comp.get(DeploymentConstants.PURL);
                                     if (purlObj != null && purlObj.toString().startsWith(gavPurlPrefix)) {
-                                        return dep.get("deploymentId").toString();
+                                        return dep.get(DeploymentConstants.DEPLOYMENT_ID).toString();
                                     }
                                 }
                             }
@@ -126,6 +123,6 @@ public class RcPublishMojo extends AbstractCentralMojo {
      * Checks if the deployment state is VALIDATED.
      */
     private boolean isValidatedState(Object stateObj) {
-        return stateObj != null && STATE_VALIDATED.equals(stateObj.toString());
+        return stateObj != null && DeploymentConstants.VALIDATED_STATE.equals(stateObj.toString());
     }
 }
