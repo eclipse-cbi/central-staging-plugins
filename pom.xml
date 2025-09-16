@@ -20,6 +20,33 @@
         <url>https://github.com/eclipse-cbi/central-staging-plugins/issues</url>
     </issueManagement>
 
+
+    <licenses>
+        <license>
+            <name>Eclipse Public License, Version 2.0</name>
+            <url>http://www.eclipse.org/legal/epl-v20.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>heurtematte</id>
+            <name>Heurtematte</name>
+            <email>sebastien.heurtematte@eclipse-foundation.org</email>
+            <organization>Eclipse Foundation</organization>
+            <organizationUrl>https://www.eclipse.org/</organizationUrl>
+            <roles>
+                <role>Release Engineer</role>
+                <role>Developer</role>
+            </roles>
+            <timezone>Europe/Paris</timezone>
+            <properties>
+                <picUrl>https://www.eclipse.org/org/foundation/hat%20photos/thanh.jpg</picUrl>
+            </properties>
+        </developer>
+    </developers>
+
     <scm>
         <url>https://github.com/eclipse-cbi/central-staging-plugins</url>
         <connection>scm:git:git://github.com/eclipse-cbi/central-staging-plugins.git</connection>
@@ -104,6 +131,32 @@
                         <phase>process-classes</phase>
                         <goals>
                             <goal>descriptor</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.11.2</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
