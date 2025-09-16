@@ -25,12 +25,6 @@ import java.util.concurrent.TimeUnit;
 public class RcUploadMojo extends AbstractCentralMojo {
 
     /**
-     * The project name to use for the upload bundle.
-     */
-    @Parameter(property = "central.projectName")
-    protected String projectName;
-
-    /**
      * The artifact file to upload. This should be a zip file containing the Maven
      * artifacts.
      */
