@@ -16,6 +16,13 @@ public class RcListMojo extends AbstractCentralMojo {
     protected boolean showAllDeployments;
 
     /**
+     * If true (or not set as default), shows all info including artifacts.
+     * If false shows only deployment's details without artifacts.
+     */
+    @Parameter(property = "central.showArtifacts", defaultValue = "true")
+    protected boolean showArtifacts;
+
+    /**
      * The namespace to use for listing deployments. Defaults to the project's
      * groupId if not set.
      */
@@ -78,9 +85,11 @@ public class RcListMojo extends AbstractCentralMojo {
         Object createTimestamp = dep.get(DeploymentConstants.CREATE_TIMESTAMP);
         String dateStr = formatTimestamp(createTimestamp);
         getLog().info("DeploymentId: " + deploymentId + ", State: " + deploymentState + ", Created: " + dateStr);
-        Object componentsObj = dep.get(DeploymentConstants.DEPLOYED_COMPONENT_VERSIONS);
-        if (componentsObj instanceof java.util.List) {
-            printComponents((java.util.List<?>) componentsObj);
+        if (showArtifacts) {
+            Object componentsObj = dep.get(DeploymentConstants.DEPLOYED_COMPONENT_VERSIONS);
+            if (componentsObj instanceof java.util.List) {
+                printComponents((java.util.List<?>) componentsObj);
+            }
         }
     }
 
