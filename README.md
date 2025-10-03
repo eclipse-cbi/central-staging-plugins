@@ -45,6 +45,7 @@ Maven plugin for Sonatype Central Portal API ([API Doc](https://central.sonatype
 | ------------------------ |--------------------------------------------------------------------------------------------------------------------------------------------------------------| --------------------------------------------- |-----------------------------------------------|
 | central.bearerToken      | Bearer token for authentication                                                                                                                              |                                               | xxxxxxxx...                                   |
 | central.serverId         | Server id in settings.xml to use for bearer token                                                                                                            | central                                       | myserverid                                    |
+| central.bearerCreate     | If true, automatically builds the bearer token by base64 encoding username:password from settings.xml server entry                                           | false                                         | true                                          |
 | central.namespace        | Namespace of the component                                                                                                                                   |                                               | org.eclipse.cbi                               |
 | central.name             | Name of the component                                                                                                                                        |                                               | org.eclipse.cbi.tycho.example-parent          |
 | central.version          | Version of the component                                                                                                                                     |                                               | 1.0.0                                         |
@@ -156,6 +157,8 @@ The deployment state can have the following values:
 
 Add the following to your `~/.m2/settings.xml`:
 
+**Option 1: Using a pre-generated bearer token (default behavior)**
+
 ```xml
 <settings>
   <servers>
@@ -167,6 +170,32 @@ Add the following to your `~/.m2/settings.xml`:
   </servers>
 </settings>
 ```
+
+**Option 2: Automatic bearer token generation**
+
+If you prefer to store your username and password directly, you can enable automatic bearer token generation:
+
+```xml
+<settings>
+  <servers>
+    <server>
+      <id>central</id>
+      <username>your_username</username>
+      <password>your_password</password>
+    </server>
+  </servers>
+</settings>
+```
+
+Then use the `-Dcentral.bearerCreate=true` parameter to automatically build the bearer token:
+
+```sh
+mvn central-staging-plugins:rc-publish -Dcentral.bearerCreate=true
+```
+
+The plugin will base64-encode `username:password` to create the bearer token automatically.
+
+**Note on encrypted passwords**: The plugin fully supports Maven's password encryption mechanism. If you have encrypted your passwords using `settings-security.xml` (as described in the [Maven Password Encryption Guide](https://maven.apache.org/guides/mini/guide-encryption.html)), the plugin will automatically decrypt them before building the bearer token. This works for both authentication methods (Option 1 and Option 2).
 
 You can change the server id used in `settings.xml` by passing `-Dcentral.serverId=yourServerId` to any plugin command. Example:
 
