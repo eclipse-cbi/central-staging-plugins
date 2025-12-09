@@ -12,7 +12,18 @@ A comprehensive Maven plugin for managing artifact synchronization to Maven Cent
 - [Maven Central Staging Plugin](#maven-central-staging-plugin)
   - [Overview](#overview)
   - [Features](#features)
-  - [Plugin Parameters](#plugin-parameters)
+  - [Central Publisher API Integration](#central-publisher-api-integration)
+  - [Maven Central Account Setup](#maven-central-account-setup)
+  - [Installation](#installation)
+    - [Maven Plugin Declaration](#maven-plugin-declaration)
+    - [Lifecycle Integration](#lifecycle-integration)
+      - [Complete Workflow with Profile](#complete-workflow-with-profile)
+      - [Synchronization from Remote Repository](#synchronization-from-remote-repository)
+      - [Multi-Module Project Configuration](#multi-module-project-configuration)
+    - [Command Line Usage](#command-line-usage)
+    - [API Foundation](#api-foundation)
+    - [Staging-Based Publishing Model](#staging-based-publishing-model)
+    - [API Operations Mapping](#api-operations-mapping)
   - [Plugin Goals](#plugin-goals)
   - [Manual Execution Examples](#manual-execution-examples)
     - [Quick Examples](#quick-examples)
@@ -25,7 +36,7 @@ A comprehensive Maven plugin for managing artifact synchronization to Maven Cent
     - [rc-drop](#rc-drop)
     - [rc-list](#rc-list)
     - [rc-status](#rc-status)
-  - [Plugin Parameters](#plugin-parameters-1)
+  - [Plugin Parameters](#plugin-parameters)
     - [Core Configuration Parameters](#core-configuration-parameters)
     - [Repository Configuration Parameters](#repository-configuration-parameters)
     - [Execution Control Parameters](#execution-control-parameters)
@@ -80,35 +91,211 @@ The Maven Central Staging Plugin provides a comprehensive set of goals for manag
 - Drop (delete) a deployment by ID
 - Drop all deployments in a namespace with `central.removeAll`
 - Drop only deployments in FAILED state with `central.removeFailedOnly` (works with single, latest, or all deployments)
-- Supports custom Central Portal API URL and serverId for token retrieval
+- Download artifacts from remote repositories
+- Eclipse P2 repository support for OSGi bundles and Eclipse plugins
+- Artifact signing with GPG
+- Support for MD5, SHA1, SHA256, and SHA512 checksums
+- Publication workflows
+- Handle reactor builds and multi module projects
+
+## Central Publisher API Integration
+
+This plugin is built on top of the **Central Publisher API** provided by Sonatype at `https://central.sonatype.com/api/v1/publisher`. All operations performed by this plugin interact directly with this REST API to manage artifact deployments.
+
+## Maven Central Account Setup
+
+1. Create an account at [Maven Central](https://central.sonatype.com/)
+2. Verify your namespace ownership (e.g., `com.yourcompany`)
+3. Generate API credentials for programmatic access
+4. Configure authentication as described in [Authentication Setup](#authentication-setup)
 
 
-## Plugin Parameters
+## Installation
 
-| Parameter                | Description                                                                                                                                                  | Default                                       | Example Value                                 |
-| ------------------------ |--------------------------------------------------------------------------------------------------------------------------------------------------------------| --------------------------------------------- |-----------------------------------------------|
-| central.bearerToken      | Bearer token for authentication                                                                                                                              |                                               | xxxxxxxx...                                   |
-| central.serverId         | Server id in settings.xml to use for bearer token                                                                                                            | central                                       | myserverid                                    |
-| central.bearerCreate     | If true, automatically builds the bearer token by base64 encoding username:password from settings.xml server entry                                           | false                                         | true                                          |
-| central.namespace        | Namespace of the component                                                                                                                                   |                                               | org.eclipse.cbi                               |
-| central.name             | Name of the component                                                                                                                                        |                                               | org.eclipse.cbi.tycho.example-parent          |
-| central.version          | Version of the component                                                                                                                                     |                                               | 1.0.0                                         |
-| central.deploymentId     | Deployment id for release/drop operations                                                                                                                    |                                               | xxxxx-xxxxx-xxxx-xxx-xxxxxxx                  |
-| central.centralApiUrl    | Custom Central Portal API URL                                                                                                                                | https://central.sonatype.com/api/v1/publisher | https://central.sonatype.com/api/v1/publisher |
-| central.removeAll        | If true, drop all deployments in the namespace                                                                                                               | false                                         | true                                          |
-| central.removeFailedOnly | If true, only drop deployments in FAILED state (used with removeAll or when dropping by id/latest)                                                           | true                                          | true                                          |
-| central.dryRun           | If true, only simulate the release/drop (no action performed)                                                                                                | false                                         | true                                          |
-| central.artifactFile     | Path to the artifact file to upload (zip file containing Maven artifacts)                                                                                    |                                               | /path/to/bundle.zip                           |
-| central.bundleName       | Custom name for the upload bundle (defaults to artifact filename without extension)                                                                          |                                               | my-custom-bundle                              |
-| central.automaticPublishing | Whether to automatically publish after validation (true=AUTOMATIC, false=USER_MANAGED)                                                                       | false                                         | true                                          |
-| central.maxWaitTime      | Maximum wait time in seconds for validation to complete                                                                                                      | 300                                           | 600                                           |
-| central.maxWaitTimePublishing | Maximum wait time in seconds for publishing to complete                                                                                                      | 600                                           | 900                                           |
-| central.pollInterval     | Polling interval in seconds when checking deployment status                                                                                                  | 5                                             | 10                                            |
-| central.waitForCompletion | If true, wait for complete publishing process. If false, return after validation/publishing starts                                                           | false                                          | true                                          |
-| central.showAllDeployments | Lists all deployments available (goal: rc-list)                                                                                                              | false                                          | true                                          |
-| central.showArtifacts | If true (or not set as default), shows all info including artifacts. If false, shows only deployment's details without artifacts. (goal: rc-list) | true                                          | false          |
+### Maven Plugin Declaration
 
-You can provide your Bearer token either via the command line or securely via your Maven `settings.xml` file.
+Add the plugin to your `pom.xml`:
+
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.eclipse.central</groupId>
+      <artifactId>central-staging-plugins</artifactId>
+      <version>1.1.0</version>
+    </plugin>
+  </plugins>
+</build>
+```
+
+### Lifecycle Integration
+
+You can bind plugin goals to Maven lifecycle phases for automatic execution during your build process.
+
+#### Complete Workflow with Profile
+
+Use a Maven profile for a complete deployment workflow:
+
+```xml
+<profiles>
+  <profile>
+    <id>central-release</id>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.cbi.central</groupId>
+          <artifactId>central-staging-plugins</artifactId>
+          <version>1.1.0</version>
+          <executions>
+            <!-- Bundle creation after package phase -->
+            <execution>
+              <id>create-bundle</id>
+              <phase>package</phase>
+              <goals>
+                <goal>rc-bundle</goal>
+              </goals>
+              <configuration>
+                <signArtifacts>true</signArtifacts>
+                <generateChecksums256>true</generateChecksums256>
+                <generateChecksums512>true</generateChecksums512>
+              </configuration>
+            </execution>
+            
+            <!-- Upload during deploy phase -->
+            <execution>
+              <id>upload-to-central</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>rc-upload</goal>
+              </goals>
+              <configuration>
+                <automaticPublishing>false</automaticPublishing>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </build>
+  </profile>
+</profiles>
+```
+
+Activate the profile during build:
+
+```bash
+mvn clean deploy -Pcentral-release
+```
+
+#### Synchronization from Remote Repository
+
+For synchronizing from a remote repository (e.g., staging repository):
+
+```xml
+<profile>
+  <id>central-sync</id>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.cbi.central</groupId>
+        <artifactId>central-staging-plugins</artifactId>
+        <version>1.1.0</version>
+        <executions>
+          <execution>
+            <id>sync-to-central</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>rc-sync</goal>
+            </goals>
+            <configuration>
+              <repositoryUrl>https://repo.example.com/repository/releases/</repositoryUrl>
+              <signArtifacts>true</signArtifacts>
+              <syncAutoPublish>true</syncAutoPublish>
+              <syncDropAfterPublish>true</syncDropAfterPublish>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</profile>
+```
+
+#### Multi-Module Project Configuration
+
+For reactor builds, configure the plugin in the parent POM:
+
+```xml
+<build>
+  <pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.eclipse.cbi.central</groupId>
+        <artifactId>central-staging-plugins</artifactId>
+        <version>1.1.0</version>
+        <configuration>
+          <serverId>central</serverId>
+          <signArtifacts>true</signArtifacts>
+          <generateChecksums256>true</generateChecksums256>
+        </configuration>
+      </plugin>
+    </plugins>
+  </pluginManagement>
+  
+  <plugins>
+    <plugin>
+      <groupId>org.eclipse.cbi.central</groupId>
+      <artifactId>central-staging-plugins</artifactId>
+      <inherited>false</inherited>
+      <executions>
+        <execution>
+          <id>upload-all-modules</id>
+          <phase>deploy</phase>
+          <goals>
+            <goal>rc-upload</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
+
+**Note**: Set `<inherited>false</inherited>` to execute only in the parent module and avoid duplicate uploads from child modules.
+
+### Command Line Usage
+
+You can also run the plugin directly from command line without adding it to your POM:
+
+```bash
+mvn org.eclipse.central:central-staging-plugins:1.0.0:rc-publish
+```
+
+### API Foundation
+
+- **Base URL**: `https://central.sonatype.com/api/v1/publisher`
+- **Authentication**: Bearer token-based authentication
+- **Documentation**: Complete API documentation available at [https://central.sonatype.com/api-doc](https://central.sonatype.com/api-doc)
+
+### Staging-Based Publishing Model
+
+The entire publication mechanism is based on **Sonatype's staging model**:
+
+1. **Bundle Phase**: Create bundle artifacts
+2. **Upload Phase**: Artifacts are uploaded to a staging area where they undergo validation
+3. **Staging Phase**: Uploaded artifacts remain in a staging state, not yet publicly available
+4. **Validation Phase**: Sonatype performs automated validation (signatures, checksums, metadata)
+5. **Publication Phase**: After validation, artifacts can be published to make them publicly available
+6. **Cleanup Phase**: Staging deployments can be dropped/removed if no longer needed
+
+### API Operations Mapping
+
+| Plugin Goal | API Endpoint | Purpose |
+|-------------|--------------|---------|
+| `rc-drop` | `DELETE /api/v1/publisher/deployment/{deploymentId}` | Drop staging deployment |
+| `rc-list` | `POST /api/v1/publisher/deployments/files` | List staging deployment |
+| `rc-upload` | `POST /api/v1/publisher/upload` | Upload bundle to staging area |
+| `rc-publish` | `POST /api/v1/publisher/deployment/{deploymentId}` | Publish staged deployment based on the deploymentId |
+| `rc-status` | `POST /api/v1/publisher/status` | Query deployment status |
 
 ## Plugin Goals
 
@@ -419,6 +606,7 @@ This section provides a comprehensive reference for all plugin parameters, organ
 |-----------|------|---------|-------------|
 | `central.serverId` | String | `central` | Maven settings server ID for authentication |
 | `central.centralApiUrl` | String | `https://central.sonatype.com/api/v1/publisher` | Maven Central API endpoint URL |
+| `central.bearerCreate` | String | false | If true, automatically builds the bearer token by base64 encoding username:password from settings.xml server entry |
 | `central.namespace` | String | `${project.groupId}` | Target namespace (groupId) for publication |
 | `central.name` | String | `${project.artifactId}` | Artifact name identifier |
 | `central.version` | String | `${project.version}` | Artifact version |
