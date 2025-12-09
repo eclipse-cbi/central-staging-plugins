@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2025 Eclipse Foundation and others.
  *
@@ -18,6 +17,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Central Portal API Client for Maven Central staging operations.
+ * 
+ * This client provides a Java interface to the Central Publisher API available at
+ * https://central.sonatype.com/api/v1/publisher. All operations are based on
+ * Sonatype's staging model for Maven Central publication.
+ * 
+ * The staging model workflow:
+ * 1. Upload artifacts to staging area
+ * 2. Validation by Sonatype (signatures, checksums, metadata)
+ * 3. Publication to make artifacts publicly available
+ * 4. Optional cleanup of staging deployments
+ * 
+ * @see <a href="https://central.sonatype.com/api-doc">Central Publisher API Documentation</a>
+ */
 public class CentralPortalClient {
     // Context strings for error descriptions
     private static final String CTX_DEPLOYMENT_NOT_FOUND = "Deployment not found";
@@ -54,10 +68,21 @@ public class CentralPortalClient {
     private final OkHttpClient client;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Creates a new Central Portal API client with default base URL.
+     * 
+     * @param bearerToken Authentication token for Central Publisher API
+     */
     public CentralPortalClient(String bearerToken) {
         this(bearerToken, DEFAULT_BASE_URL);
     }
 
+    /**
+     * Creates a new Central Portal API client with custom base URL.
+     * 
+     * @param bearerToken Authentication token for Central Publisher API
+     * @param baseUrl Custom API base URL (defaults to https://central.sonatype.com/api/v1/publisher)
+     */
     public CentralPortalClient(String bearerToken, String baseUrl) {
         this.bearerToken = bearerToken;
         this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : DEFAULT_BASE_URL;
@@ -220,13 +245,19 @@ public class CentralPortalClient {
     }
 
     /**
-     * Uploads a bundle (zip file) to Central Portal for deployment.
-     *
+     * Uploads a bundle (zip file) to Central Portal staging area.
+     * 
+     * This operation corresponds to the staging phase of Sonatype's publication model.
+     * The uploaded bundle enters a staging state where it undergoes validation
+     * before it can be published to Maven Central.
+     * 
+     * API Endpoint: POST /upload
+     * 
      * @param bundleFile     The path to the zip file to upload
-     * @param bundleName     The name for the bundle
-     * @param publishingType The publishing type (e.g., "USER_MANAGED")
-     * @return The deployment ID as a string
-     * @throws IOException if the request fails
+     * @param bundleName     The name for the bundle (for identification)
+     * @param publishingType The publishing type (e.g., "USER_MANAGED" for manual publishing)
+     * @return The deployment ID as a string (used for subsequent operations)
+     * @throws IOException if the upload fails or API returns an error
      */
     public String uploadBundle(java.nio.file.Path bundleFile, String bundleName, String publishingType) throws IOException {
         String url = baseUrl + "/upload?name=" + bundleName + "&publishingType=" + publishingType;
