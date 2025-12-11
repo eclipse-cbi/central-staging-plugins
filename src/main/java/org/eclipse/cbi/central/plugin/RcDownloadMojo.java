@@ -58,6 +58,11 @@ public class RcDownloadMojo extends AbstractStagingMojo {
     private final java.util.Set<String> failedDownloads = new java.util.HashSet<>();
 
     /**
+     * Cache of mandatory artifacts that failed to download.
+     */
+    private final java.util.Set<String> failedMandatoryDownloads = new java.util.HashSet<>();
+
+    /**
      * Main execution method for the rc-download Maven goal.
      * 
      * Downloads artifacts from a remote repository to a staging directory.
@@ -380,13 +385,14 @@ public class RcDownloadMojo extends AbstractStagingMojo {
      * @param version          The version
      * @param packaging        The packaging type
      * @param targetDir        The target directory
-     * @param isCurrentProject Whether this is a reactor project
+     * @throws MojoFailureException if a mandatory artifact fails to download
      */
     private void downloadArtifactsByPackaging(RemoteRepository remoteRepo, String groupId, String artifactId,
-            String version, String packaging, File targetDir) {
+            String version, String packaging, File targetDir) throws MojoFailureException {
 
         downloadArtifactAndSidecars(new ArtifactDownloadContext(
                 remoteRepo, groupId, artifactId, version, "pom", null, targetDir, true));
+
 
         // Download main artifact based on packaging
         if (ECLIPSE_REPOSITORY_PACKAGING.equals(packaging)) {
@@ -415,6 +421,9 @@ public class RcDownloadMojo extends AbstractStagingMojo {
             downloadArtifactAndSidecars(new ArtifactDownloadContext(
                     remoteRepo, groupId, artifactId, version, "xml", "p2metadata", targetDir, false));
         }
+
+        // Validate that all mandatory artifacts were downloaded successfully
+        validateMandatoryDownloads();
     }
 
     /**
@@ -433,10 +442,12 @@ public class RcDownloadMojo extends AbstractStagingMojo {
                     context.extension, context.classifier);
             if (context.isMandatory) {
                 getLog().error("Failed to download mandatory artifact: " + coords);
+                failedDownloads.add(coords);
+                failedMandatoryDownloads.add(coords);
             } else {
                 getLog().warn("Failed to download optional artifact: " + coords);
+                failedDownloads.add(coords);
             }
-            failedDownloads.add(coords);
             return;
         }
 
@@ -476,6 +487,23 @@ public class RcDownloadMojo extends AbstractStagingMojo {
             coords += ":" + classifier;
         }
         return coords;
+    }
+
+    /**
+     * Validates that all mandatory downloads succeeded.
+     * 
+     * @throws MojoFailureException if any mandatory artifacts failed to download
+     */
+    private void validateMandatoryDownloads() throws MojoFailureException {
+        if (!failedMandatoryDownloads.isEmpty()) {
+            StringBuilder errorMessage = new StringBuilder();
+            errorMessage.append("Failed to download ").append(failedMandatoryDownloads.size())
+                        .append(" mandatory artifact(s):\n");
+            for (String coords : failedMandatoryDownloads) {
+                errorMessage.append("  - ").append(coords).append("\n");
+            }
+            throw new MojoFailureException(errorMessage.toString());
+        }
     }
 
     // ================================================================================================
