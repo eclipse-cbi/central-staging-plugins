@@ -136,6 +136,57 @@ You can bind plugin goals to Maven lifecycle phases for automatic execution duri
 
 Use a Maven profile for a complete deployment workflow:
 
+**Option 1: Using rc-sync for complete orchestration (recommended)**
+
+```xml
+<profiles>
+  <profile>
+    <id>central-release</id>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.cbi.central</groupId>
+          <artifactId>central-staging-plugins</artifactId>
+          <version>1.1.0</version>
+          <executions>
+            <execution>
+              <id>sync-to-central</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>rc-sync</goal>
+              </goals>
+              <configuration>
+                <!-- Download from staging repository -->
+                <repositoryUrl>https://repo.eclipse.org/content/repositories/cbi-staging/</repositoryUrl>
+                <repositoryId>cbi-staging</repositoryId>
+                
+                <!-- Bundle configuration -->
+                <generateChecksums256>true</generateChecksums256>
+                <generateChecksums512>true</generateChecksums512>
+                
+                <!-- Upload and publish configuration -->
+                <syncAutoPublish>false</syncAutoPublish>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        
+        <!-- Skip default Maven deploy -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <configuration>
+            <skip>true</skip>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+  </profile>
+</profiles>
+```
+
+**Option 2: Using separate goals for more control**
+
 ```xml
 <profiles>
   <profile>
@@ -183,7 +234,11 @@ Use a Maven profile for a complete deployment workflow:
 Activate the profile during build:
 
 ```bash
+# With rc-sync (complete workflow)
 mvn clean deploy -Pcentral-release
+
+# For local artifacts without download
+mvn clean deploy -Pcentral-release -Dcentral.skipDownload=true
 ```
 
 #### Synchronization from Remote Repository
