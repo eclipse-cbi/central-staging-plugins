@@ -39,7 +39,7 @@ public class RcBundleMojo extends AbstractStagingMojo {
      * Injected by Maven and passed to RcDownloadMojo when needed.
      */
     @Component
-    private RepositorySystem repositorySystem;
+    protected RepositorySystem repositorySystem;
 
     /**
      * If true, create a ZIP bundle from processed artifacts.
@@ -73,7 +73,7 @@ public class RcBundleMojo extends AbstractStagingMojo {
 
         String[] gav = resolveEffectiveGav();
         showConfig(gav);
-
+        getLog().info("repositoryUrl: " + this.repositoryUrl);
         // First, call rc-download to download artifacts if needed
         if (this.repositoryUrl != null && !this.repositoryUrl.isBlank()) {
             getLog().info("Calling rc-download to download artifacts first...");

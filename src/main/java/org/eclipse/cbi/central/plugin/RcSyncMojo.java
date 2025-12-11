@@ -13,6 +13,7 @@ package org.eclipse.cbi.central.plugin;
 
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugin.MojoFailureException;
 
@@ -21,15 +22,21 @@ import java.util.List;
 
 import org.apache.maven.project.MavenProject;
 
+import org.eclipse.aether.RepositorySystem;
+
 /**
  * Maven goal for complete artifact synchronization workflow to Maven Central.
  * 
- * The rc-sync goal orchestrates the complete process of downloading artifacts from
- * remote repositories, creating deployment bundles, uploading to Maven Central staging,
+ * The rc-sync goal orchestrates the complete process of downloading artifacts
+ * from
+ * remote repositories, creating deployment bundles, uploading to Maven Central
+ * staging,
  * publishing artifacts, and cleaning up staging deployments.
  * 
- * This goal chains together multiple RC goals (rc-download, rc-bundle, rc-upload, 
- * rc-publish, rc-drop) to provide an end-to-end synchronization workflow suitable
+ * This goal chains together multiple RC goals (rc-download, rc-bundle,
+ * rc-upload,
+ * rc-publish, rc-drop) to provide an end-to-end synchronization workflow
+ * suitable
  * for complex deployment scenarios.
  * 
  * @since 1.0.0
@@ -38,7 +45,15 @@ import org.apache.maven.project.MavenProject;
 public class RcSyncMojo extends AbstractStagingMojo {
 
     /**
-     * If true, skip the bundle creation phase entirely and use existing bundle file.
+     * Maven Artifact Resolver system for downloading artifacts.
+     * Injected by Maven and passed to RcDownloadMojo when needed.
+     */
+    @Component
+    protected RepositorySystem repositorySystem;
+
+    /**
+     * If true, skip the bundle creation phase entirely and use existing bundle
+     * file.
      */
     @Parameter(property = "central.skipBundle", defaultValue = "false")
     protected boolean skipBundle;
@@ -50,11 +65,11 @@ public class RcSyncMojo extends AbstractStagingMojo {
     protected boolean syncAutoPublish;
 
     /**
-     * If true, automatically drop all standby staging deployments after successful publish.
+     * If true, automatically drop all standby staging deployments after successful
+     * publish.
      */
     @Parameter(property = "central.syncDropAfterPublish", defaultValue = "true")
     protected boolean syncDropAfterPublish;
-
 
     // ================================================================================================
     // MAIN EXECUTION METHODS
@@ -64,7 +79,7 @@ public class RcSyncMojo extends AbstractStagingMojo {
      * Main execution method for the rc-sync Maven goal.
      * 
      * Coordinates the complete synchronization process by orchestrating multiple
-     * RC goals: download, bundle creation, upload to Central, optional publishing, 
+     * RC goals: download, bundle creation, upload to Central, optional publishing,
      * and cleanup.
      * 
      * The workflow follows these phases:
@@ -87,8 +102,6 @@ public class RcSyncMojo extends AbstractStagingMojo {
         String[] gav = resolveEffectiveGav();
         showConfig(gav);
 
-        List<MavenProject> targetProjects = this.resolveTargetProjects();
-
         if (this.dryRun) {
             getLog().info("");
             getLog().info("=== DRY-RUN MODE ACTIVATED ===");
@@ -96,17 +109,15 @@ public class RcSyncMojo extends AbstractStagingMojo {
             getLog().info("");
         }
 
-        File bundle;
         if (this.skipBundle) {
             getLog().info("Skipping bundle creation: central.skipBundle=true");
-            bundle = syncBundleFile;
-            if (bundle == null || !bundle.exists()) {
-                throw new MojoFailureException("Bundle file does not exist: " + bundle + 
+            if (syncBundleFile == null || !syncBundleFile.exists()) {
+                throw new MojoFailureException("Bundle file does not exist: " + syncBundleFile +
                         ". Cannot skip bundle creation without existing bundle file.");
             }
-            getLog().info("Using existing bundle file: " + bundle.getAbsolutePath());
+            getLog().info("Using existing bundle file: " + syncBundleFile.getAbsolutePath());
         } else {
-            bundle = buildBundleUsingbundleMojo(targetProjects);
+            buildBundleUsingbundleMojo();
         }
 
         if (this.dryRun) {
@@ -117,7 +128,7 @@ public class RcSyncMojo extends AbstractStagingMojo {
             getLog().info("");
             return;
         }
-        performUpload(bundle);
+        performUpload();
         boolean published = this.syncAutoPublish && runPublish(gav);
         if (published && this.syncDropAfterPublish) {
             runDropStandby();
@@ -129,24 +140,26 @@ public class RcSyncMojo extends AbstractStagingMojo {
     // ================================================================================================
 
     /**
-     * Builds a bundle by delegating to the rc-bundle goal for complete artifact processing.
+     * Builds a bundle by delegating to the rc-bundle goal for complete artifact
+     * processing.
      * 
-     * This method creates and configures an RcBundleMojo instance, maps all necessary
+     * This method creates and configures an RcBundleMojo instance, maps all
+     * necessary
      * configuration parameters, and delegates the bundle creation process.
      * 
-     * @param targetProjects List of Maven projects to process
-     * @return The bundle file created from processed artifacts (null in dry-run mode)
+     * @return The bundle file created from processed artifacts (null in dry-run
+     *         mode)
      * @throws MojoFailureException if the bundle creation fails
      */
-    private File buildBundleUsingbundleMojo(List<MavenProject> targetProjects) throws MojoFailureException {
+    private void buildBundleUsingbundleMojo() throws MojoFailureException {
         // Create and configure the bundle mojo
         RcBundleMojo bundleMojo = new RcBundleMojo();
-        
+
         // Map configuration using organized helper method
         mapConfigurationToBundleMojo(bundleMojo);
-        
+
         // Delegate the bundle building to the bundle mojo
-        return bundleMojo.buildBundleFromStaging(targetProjects);
+        bundleMojo.execute();
     }
 
     /**
@@ -162,7 +175,7 @@ public class RcSyncMojo extends AbstractStagingMojo {
         bundleMojo.centralApiUrl = this.centralApiUrl;
         bundleMojo.project = this.project;
         bundleMojo.settings = this.settings;
-        
+
         // AbstractStagingMojo inherited properties - directly accessible
         bundleMojo.serverSyncId = this.serverSyncId;
         bundleMojo.repositoryUrl = this.repositoryUrl;
@@ -194,7 +207,8 @@ public class RcSyncMojo extends AbstractStagingMojo {
         bundleMojo.session = this.session;
         bundleMojo.invoker = this.invoker;
         bundleMojo.mojoExecution = this.mojoExecution;
-        
+        bundleMojo.repositorySystem = this.repositorySystem;
+
         // RcBundleMojo specific - force ZIP creation for sync operation
         bundleMojo.zipArtifacts = true;
 
@@ -218,16 +232,20 @@ public class RcSyncMojo extends AbstractStagingMojo {
                 "Config: \n" +
                         "  ============== Remote Repository Configuration ===============\n" +
                         "         central.serverSyncId=" + this.serverSyncId + "\n" +
-                        "         central.repositoryUrl=" + (this.repositoryUrl != null ? this.repositoryUrl : "null") + "\n" +
+                        "         central.repositoryUrl=" + (this.repositoryUrl != null ? this.repositoryUrl : "null")
+                        + "\n" +
                         "         central.repositoryLayout=" + this.repositoryLayout + "\n" +
                         "  =============== GAV Configuration ===============\n" +
                         "         central.namespace=" + (this.namespace != null ? this.namespace : "default") + "\n" +
                         "         central.name=" + (this.name != null ? this.name : "default") + "\n" +
                         "         central.version=" + (this.version != null ? this.version : "default") + "\n" +
                         "  =============== File and Directory Configuration ===============\n" +
-                        "         central.syncStagingDir=" + (this.syncStagingDir != null ? this.syncStagingDir : "default") + "\n" +
-                        "         central.syncBundleFile=" + (this.syncBundleFile != null ? this.syncBundleFile.getAbsolutePath() : "default") + "\n" +
-                        "         central.bundleName=" + (this.bundleName != null ? this.bundleName : "artifact filename without extension") + "\n" +
+                        "         central.syncStagingDir="
+                        + (this.syncStagingDir != null ? this.syncStagingDir : "default") + "\n" +
+                        "         central.syncBundleFile="
+                        + (this.syncBundleFile != null ? this.syncBundleFile.getAbsolutePath() : "default") + "\n" +
+                        "         central.bundleName="
+                        + (this.bundleName != null ? this.bundleName : "artifact filename without extension") + "\n" +
                         "  =============== Execution Mode Configuration ===============\n" +
                         "         central.dryRun=" + this.dryRun + "\n" +
                         "         central.skipBundle=" + this.skipBundle + "\n" +
@@ -248,21 +266,23 @@ public class RcSyncMojo extends AbstractStagingMojo {
                         "         central.removeFailedOnly=" + this.removeFailedOnly + "\n" +
                         "  =============== Central API Configuration ===============\n" +
                         "         central.serverId=" + (this.serverId != null ? this.serverId : "default") + "\n" +
-                        "         central.centralApiUrl=" + (this.centralApiUrl != null ? this.centralApiUrl : "default"));
+                        "         central.centralApiUrl="
+                        + (this.centralApiUrl != null ? this.centralApiUrl : "default"));
     }
 
     /**
      * Uploads the bundle to Maven Central using the rc-upload goal.
      * 
-     * This method creates and configures an RcUploadMojo instance with the necessary
+     * This method creates and configures an RcUploadMojo instance with the
+     * necessary
      * parameters for bundle upload, including authentication and API configuration.
      * 
-     * @param bundle The bundle file to upload to Maven Central staging area
-     * @throws MojoFailureException if upload fails due to authentication, network, or API issues
+     * @throws MojoFailureException if upload fails due to authentication, network,
+     *                              or API issues
      */
-    private void performUpload(File bundle) throws MojoFailureException {
+    private void performUpload() throws MojoFailureException {
         RcUploadMojo uploadMojo = new RcUploadMojo();
-        uploadMojo.syncBundleFile = bundle;
+        uploadMojo.syncBundleFile = syncBundleFile;
         uploadMojo.bundleName = bundleName;
         // Use the dedicated upload automaticPublishing flag
         uploadMojo.automaticPublishing = this.automaticPublishing;
@@ -282,7 +302,8 @@ public class RcSyncMojo extends AbstractStagingMojo {
     /**
      * Publishes the staged artifacts using the rc-publish goal.
      * 
-     * This method triggers the publication of all artifacts currently staged in Maven Central
+     * This method triggers the publication of all artifacts currently staged in
+     * Maven Central
      * for the configured namespace. Publication makes artifacts publicly available.
      * 
      * @param gav The GAV coordinates being published (used for logging)
