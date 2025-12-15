@@ -131,6 +131,8 @@ public class RcBundleMojo extends AbstractStagingMojo {
             getLog().warn("Skipping checksum generation");
         }
 
+        displayChecksumsSummary(stagingDir, targetProjects);
+        
         // Ensure downloaded artifacts are signed before creating the final bundle
         if (this.signArtifacts) {
             getLog().info("Ensuring signatures for artifacts in " + stagingDir.getAbsolutePath());
@@ -151,6 +153,111 @@ public class RcBundleMojo extends AbstractStagingMojo {
             getLog().info("Artifacts processed in staging directory: " + stagingDir.getAbsolutePath());
             getLog().info("ZIP bundle creation skipped (central.zipArtifacts=false)");
             return null;
+        }
+    }
+
+    /**
+     * Displays a summary of all checksums for the artifacts.
+     * 
+     * @param stagingDir     The staging directory containing downloaded artifacts
+     * @param targetProjects List of Maven projects to process
+     * @throws MojoFailureException if reading checksums fails
+     */
+    private void displayChecksumsSummary(File stagingDir, List<MavenProject> targetProjects)
+            throws MojoFailureException {
+        getLog().info("========================================");
+        getLog().info("Checksums Summary");
+        getLog().info("========================================");
+
+        for (MavenProject targetProject : targetProjects) {
+            String groupId = targetProject.getGroupId();
+            String artifactId = targetProject.getArtifactId();
+            String projectVersion = targetProject.getVersion();
+
+            // Build path to downloaded artifacts
+            String groupPath = groupId.replace('.', '/');
+            File artifactDir = new File(new File(new File(stagingDir, groupPath), artifactId), projectVersion);
+
+            if (artifactDir.exists()) {
+                getLog().info("");
+                getLog().info("Project: " + groupId + ":" + artifactId + ":" + projectVersion);
+                displayChecksumsForArtifactDir(artifactDir, artifactId, projectVersion, targetProject.getPackaging());
+            }
+        }
+
+        getLog().info("========================================");
+    }
+
+    /**
+     * Displays checksums for all artifacts in a directory.
+     * 
+     * @param artifactDir The directory containing the artifacts
+     * @param artifactId  The artifact ID
+     * @param version     The version of the artifact
+     * @param packaging   The packaging type
+     * @throws MojoFailureException if reading checksums fails
+     */
+    private void displayChecksumsForArtifactDir(File artifactDir, String artifactId, String version, String packaging)
+            throws MojoFailureException {
+        for (String artifactName : buildArtifactFileNames(artifactId, version, packaging)) {
+            File artifactFile = new File(artifactDir, artifactName);
+            if (artifactFile.exists()) {
+                displayChecksumsForFile(artifactDir, artifactName);
+            }
+        }
+    }
+
+    /**
+     * Displays checksums for a single file.
+     * 
+     * @param artifactDir  The directory containing the artifact
+     * @param artifactName The name of the artifact file
+     * @throws MojoFailureException if reading checksums fails
+     */
+    private void displayChecksumsForFile(File artifactDir, String artifactName) throws MojoFailureException {
+        StringBuilder checksumInfo = new StringBuilder("  " + artifactName);
+        boolean hasChecksums = false;
+
+        // Define checksum types with their extensions and labels
+        List<ChecksumType> checksumTypes = new ArrayList<>();
+        checksumTypes.add(new ChecksumType("MD5", MD5_EXTENSION, true));
+        checksumTypes.add(new ChecksumType("SHA-1", SHA1_EXTENSION, true));
+        checksumTypes.add(new ChecksumType("SHA-256", SHA256_EXTENSION, this.generateChecksums256));
+        checksumTypes.add(new ChecksumType("SHA-512", SHA512_EXTENSION, this.generateChecksums512));
+
+        // Iterate through all checksum types
+        for (ChecksumType checksumType : checksumTypes) {
+            if (checksumType.enabled) {
+                File checksumFile = new File(artifactDir, artifactName + checksumType.extension);
+                if (checksumFile.exists()) {
+                    try {
+                        String checksum = new String(Files.readAllBytes(checksumFile.toPath())).trim();
+                        checksumInfo.append("\n    ").append(checksumType.label).append(": ").append(checksum);
+                        hasChecksums = true;
+                    } catch (IOException e) {
+                        throw new MojoFailureException("Failed to read " + checksumType.label + " checksum for " + artifactName, e);
+                    }
+                }
+            }
+        }
+
+        if (hasChecksums) {
+            getLog().info(checksumInfo.toString());
+        }
+    }
+
+    /**
+     * Helper class to represent a checksum type with its properties.
+     */
+    private static class ChecksumType {
+        final String label;
+        final String extension;
+        final boolean enabled;
+
+        ChecksumType(String label, String extension, boolean enabled) {
+            this.label = label;
+            this.extension = extension;
+            this.enabled = enabled;
         }
     }
 
