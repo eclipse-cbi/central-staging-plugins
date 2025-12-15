@@ -122,7 +122,7 @@ Add the plugin to your `pom.xml`:
     <plugin>
       <groupId>org.eclipse.central</groupId>
       <artifactId>central-staging-plugins</artifactId>
-      <version>1.1.0</version>
+      <version>1.2.0</version>
     </plugin>
   </plugins>
 </build>
@@ -147,7 +147,7 @@ Use a Maven profile for a complete deployment workflow:
         <plugin>
           <groupId>org.eclipse.cbi.central</groupId>
           <artifactId>central-staging-plugins</artifactId>
-          <version>1.1.0</version>
+          <version>1.2.0</version>
           <executions>
             <execution>
               <id>sync-to-central</id>
@@ -196,7 +196,7 @@ Use a Maven profile for a complete deployment workflow:
         <plugin>
           <groupId>org.eclipse.cbi.central</groupId>
           <artifactId>central-staging-plugins</artifactId>
-          <version>1.1.0</version>
+          <version>1.2.0</version>
           <executions>
             <!-- Bundle creation after package phase -->
             <execution>
@@ -253,7 +253,7 @@ For synchronizing from a remote repository (e.g., staging repository):
       <plugin>
         <groupId>org.eclipse.cbi.central</groupId>
         <artifactId>central-staging-plugins</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
         <executions>
           <execution>
             <id>sync-to-central</id>
@@ -286,7 +286,7 @@ For reactor builds, configure the plugin in the parent POM:
       <plugin>
         <groupId>org.eclipse.cbi.central</groupId>
         <artifactId>central-staging-plugins</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
         <configuration>
           <serverId>central</serverId>
           <signArtifacts>true</signArtifacts>
