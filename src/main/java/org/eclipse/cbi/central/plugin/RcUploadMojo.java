@@ -62,6 +62,9 @@ public class RcUploadMojo extends AbstractStagingMojo {
 
             initClient();
 
+            // Show configuration
+            showConfig();
+
             // Validate automatic publishing parameter
             validateAutomaticPublishing();
 
@@ -338,5 +341,27 @@ public class RcUploadMojo extends AbstractStagingMojo {
                 getLog().info("    - " + purl);
             }
         }
+    }
+
+    /**
+     * Displays the current configuration for the upload operation.
+     */
+    private void showConfig() {
+        getLog().info(
+                "Config: \n" +
+                        "  ============== Upload Configuration ===============\n" +
+                        "         central.syncBundleFile="
+                        + (this.syncBundleFile != null ? this.syncBundleFile.getAbsolutePath() : "default") + "\n" +
+                        "         central.bundleName="
+                        + (this.bundleName != null ? this.bundleName : "default") + "\n" +
+                        "  =============== Publishing Configuration ===============\n" +
+                        "         central.automaticPublishing=" + this.automaticPublishing + "\n" +
+                        "  =============== Timing Configuration ===============\n" +
+                        "         central.maxWaitTime=" + this.maxWaitTime + "\n" +
+                        "         central.maxWaitTimePublishing=" + this.maxWaitTimePublishing + "\n" +
+                        "         central.pollInterval=" + this.pollInterval + "\n" +
+                        "         central.waitForCompletion=" + this.waitForCompletion + "\n" +
+                        "  =============== Execution Mode Configuration ===============\n" +
+                        "         central.dryRun=" + this.dryRun);
     }
 }

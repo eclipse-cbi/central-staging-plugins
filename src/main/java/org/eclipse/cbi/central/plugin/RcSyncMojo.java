@@ -230,6 +230,8 @@ public class RcSyncMojo extends AbstractStagingMojo {
         getLog().info("GAV to sync: " + String.join(":", gav));
         getLog().info(
                 "Config: \n" +
+                        "  ============== Central Configuration ===============\n" +
+                        "         central.bearerCreate=" + this.bearerCreate + "\n" +
                         "  ============== Remote Repository Configuration ===============\n" +
                         "         central.serverSyncId=" + this.serverSyncId + "\n" +
                         "         central.repositoryUrl=" + (this.repositoryUrl != null ? this.repositoryUrl : "null")
