@@ -60,6 +60,7 @@ A comprehensive Maven plugin for managing artifact synchronization to Maven Cent
       - [Testing](#testing)
   - [Authentication Setup](#authentication-setup)
   - [GitHub Actions Integration](#github-actions-integration)
+    - [Release to central with rc-sync](#release-to-central-with-rc-sync)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
       - [Authentication Failures](#authentication-failures)
@@ -1038,7 +1039,66 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ## GitHub Actions Integration
 
-The plugin can be integrated into GitHub Actions workflows for automated publication to Maven Central. Here are common workflow patterns:
+The plugin can be integrated into GitHub Actions workflows for automated publication to Maven Central. 
+
+### Release to central with rc-sync
+
+```yaml
+name: Release to central
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' 
+
+jobs:
+  release-to-central:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Remove SNAPSHOT from version
+        run: |
+          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          if [[ $CURRENT_VERSION == *-SNAPSHOT ]]; then
+            RELEASE_VERSION=${CURRENT_VERSION%-SNAPSHOT}
+            mvn versions:set -DnewVersion=$RELEASE_VERSION -DgenerateBackupPoms=false
+            echo "Version changed from $CURRENT_VERSION to $RELEASE_VERSION"
+          else
+            echo "Version is already a release version: $CURRENT_VERSION"
+          fi
+      - name: Build and deploy to Maven Central
+        run: |
+          mvn clean deploy -Pcentral-release -DskipTests -Dcentral.bearerCreate=true --settings settings.xml
+        env:
+          REPO3_TOKEN_USERNAME: ${{ secrets.REPO3_TOKEN_USERNAME }}
+          REPO3_TOKEN_PASSWORD: ${{ secrets.REPO3_TOKEN_PASSWORD }}
+          CENTRAL_SONATYPE_TOKEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
+          CENTRAL_SONATYPE_TOKEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      
+      - name: Check Maven Central upload status 
+        run: |
+          mvn org.eclipse.cbi.central:central-staging-plugins:rc-status -Dcentral.bearerCreate=true --settings settings.xml
+        env:
+          CENTRAL_SONATYPE_TOKEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
+          CENTRAL_SONATYPE_TOKEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
+```
+
+## Publish Sonatype Central Staging Packages
+
+This example publishes artifacts to the Sonatype staging environment. The `central-staging-plugins` then interacts with the API by first dropping all existing deployments and, after staging, publishing the artifacts to Maven Central.
 
 ```yaml
 name: Publish staging package to the Maven Central Repository
