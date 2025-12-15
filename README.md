@@ -1064,8 +1064,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'temurin'
-          cache: maven
+          distribution: 'temurin'          
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
       - name: Remove SNAPSHOT from version
@@ -1095,6 +1094,8 @@ jobs:
           CENTRAL_SONATYPE_TOKEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
           CENTRAL_SONATYPE_TOKEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
 ```
+
+IMPORTANT: Don't use `cache: maven` with `actions/setup-java@v4` this can lead to wrong checksum verification. 
 
 ## Publish Sonatype Central Staging Packages
 
