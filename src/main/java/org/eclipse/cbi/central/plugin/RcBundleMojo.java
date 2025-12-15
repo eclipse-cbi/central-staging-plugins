@@ -132,7 +132,7 @@ public class RcBundleMojo extends AbstractStagingMojo {
         }
 
         displayChecksumsSummary(stagingDir, targetProjects);
-        
+
         // Ensure downloaded artifacts are signed before creating the final bundle
         if (this.signArtifacts) {
             getLog().info("Ensuring signatures for artifacts in " + stagingDir.getAbsolutePath());
@@ -218,14 +218,8 @@ public class RcBundleMojo extends AbstractStagingMojo {
         StringBuilder checksumInfo = new StringBuilder("  " + artifactName);
         boolean hasChecksums = false;
 
-        // Define checksum types with their extensions and labels
-        List<ChecksumType> checksumTypes = new ArrayList<>();
-        checksumTypes.add(new ChecksumType("MD5", MD5_EXTENSION, true));
-        checksumTypes.add(new ChecksumType("SHA-1", SHA1_EXTENSION, true));
-        checksumTypes.add(new ChecksumType("SHA-256", SHA256_EXTENSION, this.generateChecksums256));
-        checksumTypes.add(new ChecksumType("SHA-512", SHA512_EXTENSION, this.generateChecksums512));
-
         // Iterate through all checksum types
+        List<ChecksumType> checksumTypes = getChecksumTypes();
         for (ChecksumType checksumType : checksumTypes) {
             if (checksumType.enabled) {
                 File checksumFile = new File(artifactDir, artifactName + checksumType.extension);
@@ -259,6 +253,20 @@ public class RcBundleMojo extends AbstractStagingMojo {
             this.extension = extension;
             this.enabled = enabled;
         }
+    }
+
+    /**
+     * Creates the list of checksum types based on plugin configuration.
+     * 
+     * @return List of checksum types with their configurations
+     */
+    private List<ChecksumType> getChecksumTypes() {
+        List<ChecksumType> checksumTypes = new ArrayList<>();
+        checksumTypes.add(new ChecksumType("MD5", MD5_EXTENSION, true));
+        checksumTypes.add(new ChecksumType("SHA-1", SHA1_EXTENSION, true));
+        checksumTypes.add(new ChecksumType("SHA-256", SHA256_EXTENSION, this.generateChecksums256));
+        checksumTypes.add(new ChecksumType("SHA-512", SHA512_EXTENSION, this.generateChecksums512));
+        return checksumTypes;
     }
 
     /**
@@ -317,25 +325,17 @@ public class RcBundleMojo extends AbstractStagingMojo {
     private void generateMissingChecksums(File artifactDir, String artifactId, String version, String packaging,
             boolean forceRegenerate)
             throws MojoFailureException {
+        List<ChecksumType> checksumTypes = getChecksumTypes();
+
         for (String artifactName : buildArtifactFileNames(artifactId, version, packaging)) {
             File artifactFile = new File(artifactDir, artifactName);
             if (artifactFile.exists()) {
-                // Always generate MD5 and SHA-1 checksums when generateChecksums is enabled
-                generateChecksumForArtifact(artifactDir, artifactFile, artifactName, "MD5", MD5_EXTENSION,
-                        forceRegenerate);
-                generateChecksumForArtifact(artifactDir, artifactFile, artifactName, "SHA-1", SHA1_EXTENSION,
-                        forceRegenerate);
-
-                // Generate SHA-256 checksums if enabled
-                if (this.generateChecksums256) {
-                    generateChecksumForArtifact(artifactDir, artifactFile, artifactName, "SHA-256", SHA256_EXTENSION,
-                            forceRegenerate);
-                }
-
-                // Generate SHA-512 checksums if enabled
-                if (this.generateChecksums512) {
-                    generateChecksumForArtifact(artifactDir, artifactFile, artifactName, "SHA-512", SHA512_EXTENSION,
-                            forceRegenerate);
+                // Generate checksums for all enabled types
+                for (ChecksumType checksumType : checksumTypes) {
+                    if (checksumType.enabled) {
+                        generateChecksumForArtifact(artifactDir, artifactFile, artifactName, 
+                                checksumType.label, checksumType.extension, forceRegenerate);
+                    }
                 }
             }
         }
