@@ -25,31 +25,6 @@ import java.util.concurrent.TimeUnit;
 @Mojo(name = "rc-upload", defaultPhase = LifecyclePhase.NONE)
 public class RcUploadMojo extends AbstractStagingMojo {
 
-    /**
-     * Maximum wait time in seconds for validation to complete.
-     */
-    @Parameter(property = "central.maxWaitTime", defaultValue = "300")
-    protected int maxWaitTime;
-
-    /**
-     * Maximum wait time in seconds for publishing to complete.
-     */
-    @Parameter(property = "central.maxWaitTimePublishing", defaultValue = "600")
-    protected int maxWaitTimePublishing;
-
-    /**
-     * Polling interval in seconds when checking deployment status.
-     */
-    @Parameter(property = "central.pollInterval", defaultValue = "5")
-    protected int pollInterval;
-
-    /**
-     * If true, wait for the complete publishing process to finish.
-     * If false, return after validation is complete (for USER_MANAGED) or after publishing starts (for AUTOMATIC).
-     */
-    @Parameter(property = "central.waitForCompletion", defaultValue = "false")
-    protected boolean waitForCompletion;
-
     @Override
     public void execute() throws MojoFailureException {
         try {
@@ -349,6 +324,8 @@ public class RcUploadMojo extends AbstractStagingMojo {
     private void showConfig() {
         getLog().info(
                 "Config: \n" +
+                        "  ============== Central Configuration ===============\n" +
+                        "         central.bearerCreate=" + this.bearerCreate + "\n" +
                         "  ============== Upload Configuration ===============\n" +
                         "         central.syncBundleFile="
                         + (this.syncBundleFile != null ? this.syncBundleFile.getAbsolutePath() : "default") + "\n" +

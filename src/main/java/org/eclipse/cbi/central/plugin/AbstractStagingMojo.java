@@ -286,6 +286,31 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
      */
     @Parameter(property = "central.showMavenGoalOutput", defaultValue = "false")
     protected boolean showMavenGoalOutput;
+    
+    /**
+     * Maximum wait time in seconds for validation to complete.
+     */
+    @Parameter(property = "central.maxWaitTime", defaultValue = "300")
+    protected int maxWaitTime;
+
+    /**
+     * Maximum wait time in seconds for publishing to complete.
+     */
+    @Parameter(property = "central.maxWaitTimePublishing", defaultValue = "600")
+    protected int maxWaitTimePublishing;
+
+    /**
+     * Polling interval in seconds when checking deployment status.
+     */
+    @Parameter(property = "central.pollInterval", defaultValue = "5")
+    protected int pollInterval;
+
+    /**
+     * If true, wait for the complete publishing process to finish.
+     * If false, return after validation is complete (for USER_MANAGED) or after publishing starts (for AUTOMATIC).
+     */
+    @Parameter(property = "central.waitForCompletion", defaultValue = "false")
+    protected boolean waitForCompletion;
 
     // ================================================================================================
     // SHARED INJECTED MAVEN COMPONENTS

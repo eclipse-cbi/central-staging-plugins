@@ -292,6 +292,12 @@ public class RcSyncMojo extends AbstractStagingMojo {
         uploadMojo.settings = this.settings;
         uploadMojo.serverId = this.serverId;
         uploadMojo.centralApiUrl = this.centralApiUrl;
+        uploadMojo.bearerCreate = this.bearerCreate;
+        uploadMojo.maxWaitTime = this.maxWaitTime;
+        uploadMojo.maxWaitTimePublishing = this.maxWaitTimePublishing;
+        uploadMojo.pollInterval = this.pollInterval;
+        uploadMojo.waitForCompletion = this.waitForCompletion;
+
         try {
             uploadMojo.execute();
             getLog().info("Upload via RcUploadMojo completed.");
@@ -320,6 +326,7 @@ public class RcSyncMojo extends AbstractStagingMojo {
         publishMojo.settings = this.settings;
         publishMojo.serverId = this.serverId;
         publishMojo.centralApiUrl = this.centralApiUrl;
+        publishMojo.bearerCreate = this.bearerCreate;
         try {
             publishMojo.execute();
             getLog().info("Publication OK for module " + String.join(":", gav));
