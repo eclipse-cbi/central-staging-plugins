@@ -121,7 +121,7 @@ Add the plugin to your `pom.xml`:
 <build>
   <plugins>
     <plugin>
-      <groupId>org.eclipse.central</groupId>
+      <groupId>org.eclipse.cbi.central</groupId>
       <artifactId>central-staging-plugins</artifactId>
       <version>1.2.0</version>
     </plugin>
@@ -323,7 +323,7 @@ For reactor builds, configure the plugin in the parent POM:
 You can also run the plugin directly from command line without adding it to your POM:
 
 ```bash
-mvn org.eclipse.central:central-staging-plugins:1.0.0:rc-publish
+mvn org.eclipse.cbi.central:central-staging-plugins:1.2.0:rc-publish
 ```
 
 ### API Foundation
