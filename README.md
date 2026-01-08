@@ -36,6 +36,7 @@ A comprehensive Maven plugin for managing artifact synchronization to Maven Cent
     - [rc-drop](#rc-drop)
     - [rc-list](#rc-list)
     - [rc-status](#rc-status)
+    - [nexus-list](#nexus-list)
   - [Plugin Parameters](#plugin-parameters)
     - [Core Configuration Parameters](#core-configuration-parameters)
     - [Repository Configuration Parameters](#repository-configuration-parameters)
@@ -652,29 +653,14 @@ mvn central-staging-plugins:rc-status \
 ### nexus-list
 
 Search and list artifacts from a Nexus Repository Manager instance:
+
 ```bash
 mvn central-staging-plugins:nexus-list \
+  -Dnexus.showDetails=true \
   -Dnexus.serverId=nexus \
   -Dnexus.repository=releases \
   -Dnexus.group=org.eclipse.cbi
 ```
-
-**Key Features:**
-
-- Search artifacts across Nexus repositories using the REST API
-- Filter by repository, group (namespace), artifact ID, and version
-- Automatically uses project coordinates when run in a Maven project directory
-- Display artifact information with versions
-- Optional detailed view showing download URLs and asset information
-- Support for execution without a Maven project
-
-**Common Use Cases:**
-
-- List all versions of an artifact in a Nexus repository
-- Search for artifacts by group ID across repositories
-- Find specific artifact versions before download or deployment
-- Verify artifact availability in Nexus before publishing
-- Audit repository content
 
 **nexus-list Parameters:**
 
@@ -690,94 +676,10 @@ mvn central-staging-plugins:nexus-list \
 | `nexus.bearerCreate` | Boolean | `false` | Create bearer token from username:password in settings.xml |
 | `nexus.apiUrl` | String | `https://repo3.eclipse.org/service/rest/v1` | Nexus Repository Manager API base URL |
 
-**List Configuration:**
-
-```bash
-# List artifacts for current project (uses project groupId and artifactId)
-mvn central-staging-plugins:nexus-list -Dnexus.serverId=nexus
-
-# List all artifacts in a specific group across all repositories
-mvn central-staging-plugins:nexus-list \
-  -Dnexus.group=org.eclipse.cbi \
-  -Dnexus.serverId=nexus
-
-# List artifacts in a specific repository with detailed information
-mvn central-staging-plugins:nexus-list \
-  -Dnexus.repository=releases \
-  -Dnexus.group=org.eclipse.cbi \
-  -Dnexus.artifact=central-staging-plugins \
-  -Dnexus.showDetails=true
-
-# List specific version
-mvn central-staging-plugins:nexus-list \
-  -Dnexus.repository=releases \
-  -Dnexus.group=org.eclipse.cbi \
-  -Dnexus.artifact=central-staging-plugins \
-  -Dnexus.version=1.2.0
-
-# Execute without a Maven project (requires explicit group parameter)
-mvn org.eclipse.cbi.central:central-staging-plugins:1.2.1-SNAPSHOT:nexus-list \
-  -Dnexus.group=org.eclipse.cbi \
-  -Dnexus.serverId=nexus
-
-# Use custom Nexus instance
-mvn central-staging-plugins:nexus-list \
-  -Dnexus.apiUrl=https://nexus.example.com/service/rest/v1 \
-  -Dnexus.group=com.example \
-  -Dnexus.serverId=my-nexus
-```
-
-**Output Format:**
-
-The goal displays found artifacts in a clear format:
-```
-[INFO] Found 3 artifact(s):
-[INFO] ─────────────────────────────────────────────────────────────
-[INFO] • org.eclipse.cbi:central-staging-plugins:1.0.0
-[INFO] • org.eclipse.cbi:central-staging-plugins:1.1.0
-[INFO] • org.eclipse.cbi:central-staging-plugins:1.2.0
-```
-
-With `nexus.showDetails=true`, additional information is displayed:
-```
-[INFO] • org.eclipse.cbi:central-staging-plugins:1.2.0
-[INFO]   Repository: releases
-[INFO]   Format: maven2
-[INFO]   Component ID: b3JnLmVjbGlwc2UuY2JpOmNlbnRyYWwtc3RhZ2luZy1wbHVnaW5zOjEuMi4w
-[INFO]   Assets (4):
-[INFO]     - org/eclipse/cbi/central-staging-plugins/1.2.0/central-staging-plugins-1.2.0.pom
-[INFO]       URL: https://repo3.eclipse.org/repository/releases/org/eclipse/...
-[INFO]       Type: application/xml
-[INFO]     - org/eclipse/cbi/central-staging-plugins/1.2.0/central-staging-plugins-1.2.0.jar
-[INFO]       URL: https://repo3.eclipse.org/repository/releases/org/eclipse/...
-[INFO]       Type: application/java-archive
-```
-
-**Performance Tips:**
+**Tips:**
 
 - Always specify `nexus.repository` when possible for optimal search performance
-- The goal will display a warning when `nexus.repository` is not set
-- Use specific group and artifact filters to narrow search results
-- Use `nexus.version` to find a specific release
 
-**Authentication Setup:**
-
-Configure authentication in `settings.xml`:
-```xml
-<servers>
-  <server>
-    <id>nexus</id>
-    <password>your-token-here</password>
-  </server>
-</servers>
-```
-
-Or provide token directly:
-```bash
-mvn central-staging-plugins:nexus-list \
-  -Dnexus.bearerToken=your-token-here \
-  -Dnexus.group=org.eclipse
-```
 
 **rc-status Parameters**:
 
