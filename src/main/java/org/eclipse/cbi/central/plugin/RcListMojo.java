@@ -18,7 +18,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.eclipse.cbi.central.DeploymentConstants;
 import java.util.Map;
 
-@Mojo(name = "rc-list", defaultPhase = LifecyclePhase.NONE)
+@Mojo(name = "rc-list", defaultPhase = LifecyclePhase.NONE, requiresProject = false)
 public class RcListMojo extends AbstractCentralMojo {
     /**
      * If true, show all deployments. If false or not set, only show the latest.
@@ -49,12 +49,25 @@ public class RcListMojo extends AbstractCentralMojo {
     public void execute() throws MojoFailureException {
         try {
             getLog().info("Starting rc-list goal");
-            if (!project.isExecutionRoot()) {
+            
+            // Skip execution root check if no project
+            if (project != null && !project.isExecutionRoot()) {
                 getLog().info("Skipping rc-list: not execution root");
                 return;
             }
+            
             initClient();
-            String effectiveNamespace = (namespace != null && !namespace.isEmpty()) ? namespace : project.getGroupId();
+            
+            // Determine effective namespace
+            String effectiveNamespace;
+            if (namespace != null && !namespace.isEmpty()) {
+                effectiveNamespace = namespace;
+            } else if (project != null) {
+                effectiveNamespace = project.getGroupId();
+            } else {
+                throw new MojoFailureException("The 'namespace' parameter is required when running without a Maven project. Use -Dcentral.namespace=<your-namespace>");
+            }
+            
             Map<String, Object> result = client.listDeployments(effectiveNamespace, 0, 500, "createTimestamp", "desc");
             Object deploymentsObj = result.get(DeploymentConstants.DEPLOYMENTS);
             if (deploymentsObj instanceof java.util.List) {
