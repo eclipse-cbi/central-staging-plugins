@@ -32,7 +32,7 @@ import java.util.Map;
  * 
  * @see <a href="https://central.sonatype.com/api-doc">Central Publisher API Documentation</a>
  */
-public class CentralPortalClient {
+public class CentralPortalClient extends BaseRepositoryClient {
     // Context strings for error descriptions
     private static final String CTX_DEPLOYMENT_NOT_FOUND = "Deployment not found";
     private static final String CTX_CHECK_PUBLISHED = "Check published";
@@ -40,33 +40,8 @@ public class CentralPortalClient {
     private static final String CTX_PUBLISH_DEPLOYMENT = "Publish deployment";
     private static final String CTX_LIST_DEPLOYMENTS = "List deployments";
     private static final String CTX_UPLOAD_BUNDLE = "Upload bundle";
-    // Generic error codes with parameterized descriptions
-    private static final Map<Integer, String> ERROR_CODES = Map.of(
-            400, "Bad request",
-            401, "Unauthorized",
-            403, "Forbidden",
-            404, "Not found",
-            500, "Internal server error");
-
-    /**
-     * Returns a descriptive error message for a given HTTP code and context.
-     */
-    private String errorDescription(int code, String context) {
-        String base = ERROR_CODES.getOrDefault(code, "Unexpected error");
-        if (context != null && !context.isEmpty()) {
-            return base + " - " + context;
-        }
-        return base;
-    }
 
     private static final String DEFAULT_BASE_URL = "https://central.sonatype.com/api/v1/publisher";
-    private final String baseUrl;
-    private static final String HEADER_AUTH = "Authorization";
-    private static final String HEADER_ACCEPT = "Accept";
-    private static final String MEDIA_JSON = "application/json";
-    private final String bearerToken;
-    private final OkHttpClient client;
-    private final ObjectMapper objectMapper;
 
     /**
      * Creates a new Central Portal API client with default base URL.
@@ -74,7 +49,7 @@ public class CentralPortalClient {
      * @param bearerToken Authentication token for Central Publisher API
      */
     public CentralPortalClient(String bearerToken) {
-        this(bearerToken, DEFAULT_BASE_URL);
+        this(bearerToken, null);
     }
 
     /**
@@ -84,45 +59,7 @@ public class CentralPortalClient {
      * @param baseUrl Custom API base URL (defaults to https://central.sonatype.com/api/v1/publisher)
      */
     public CentralPortalClient(String bearerToken, String baseUrl) {
-        this.bearerToken = bearerToken;
-        this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : DEFAULT_BASE_URL;
-        this.client = new OkHttpClient();
-        this.objectMapper = new ObjectMapper();
-    }
-
-    /**
-     * Creates a base HTTP request builder with authentication and JSON headers.
-     */
-    private Request.Builder baseRequest(String url) {
-        return new Request.Builder()
-                .url(url)
-                .addHeader(HEADER_AUTH, "Bearer " + bearerToken)
-                .addHeader(HEADER_ACCEPT, MEDIA_JSON);
-    }
-
-    /**
-     * Handles HTTP responses, parses JSON if expected, and throws exceptions for
-     * error codes.
-     *
-     * @param response      The HTTP response
-     * @param errorMessages Map of error codes to messages
-     * @param expectJson    Whether to parse the response body as JSON
-     * @return Parsed response as a Map
-     * @throws IOException if an error or unexpected code occurs
-     */
-    private Map<String, Object> handleResponse(Response response, Map<Integer, String> errorMessages,
-            boolean expectJson) throws IOException {
-        int code = response.code();
-        String body = response.body() != null ? response.body().string() : "";
-        if (code == 200 && expectJson) {
-            return objectMapper.readValue(body, Map.class);
-        } else if (code == 204 && !expectJson) {
-            return Map.of("success", true, "message", "Deployment published successfully.");
-        } else if (errorMessages.containsKey(code)) {
-            throw new IOException(errorMessages.get(code) + " (" + code + "): " + body);
-        } else {
-            throw new IOException("Unexpected HTTP code " + code + ": " + body);
-        }
+        super(bearerToken, baseUrl, DEFAULT_BASE_URL);
     }
 
     /**
