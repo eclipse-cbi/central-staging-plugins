@@ -673,7 +673,6 @@ mvn central-staging-plugins:nexus-list \
 | `nexus.showDetails` | Boolean | `false` | Display detailed information including download URLs and asset details |
 | `nexus.bearerToken` | String | - | Authentication token for Nexus Repository Manager API |
 | `nexus.serverId` | String | `nexus` | Server ID for retrieving credentials from settings.xml |
-| `nexus.bearerCreate` | Boolean | `false` | Create bearer token from username:password in settings.xml |
 | `nexus.apiUrl` | String | `https://repo3.eclipse.org/service/rest/v1` | Nexus Repository Manager API base URL |
 
 **Tips:**

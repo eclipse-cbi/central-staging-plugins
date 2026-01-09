@@ -43,15 +43,6 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
     protected String serverId;
 
     /**
-     * Whether to automatically build the bearer token from username:password in
-     * settings.xml.
-     * When true, the bearer token is created by base64 encoding "username:password"
-     * from the server entry.
-     */
-    @Parameter(property = "nexus.bearerCreate", defaultValue = "false")
-    protected boolean bearerCreate;
-
-    /**
      * The Nexus Repository Manager API URL. If not set, the default is used.
      */
     @Parameter(property = "nexus.apiUrl")
@@ -96,14 +87,7 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
         if (settings != null && serverId != null) {
             Server server = settings.getServer(serverId);
             if (server != null) {
-                String password = decryptPassword(server);
-                if (bearerCreate && server.getUsername() != null) {
-                    // Create token from username:password
-                    String credentials = server.getUsername() + ":" + password;
-                    return Base64.getEncoder().encodeToString(credentials.getBytes());
-                } else if (password != null && !password.isEmpty()) {
-                    return password;
-                }
+                return decryptPassword(server);
             }
         }
         
