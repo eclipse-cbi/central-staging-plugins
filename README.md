@@ -12,6 +12,7 @@ A comprehensive Maven plugin for managing artifact synchronization to Maven Cent
 - [Maven Central Staging Plugin](#maven-central-staging-plugin)
   - [Overview](#overview)
   - [Features](#features)
+  - [Overview of the Workflow Architecture](#overview-of-the-workflow-architecture)
   - [Central Publisher API Integration](#central-publisher-api-integration)
   - [Maven Central Account Setup](#maven-central-account-setup)
   - [Installation](#installation)
@@ -98,7 +99,61 @@ The Maven Central Staging Plugin provides a comprehensive set of goals for manag
 - Artifact signing with GPG
 - Support for MD5, SHA1, SHA256, and SHA512 checksums
 - Publication workflows
-- Handle reactor builds and multi module projects
+- Handle reactor builds and multi-module projects
+- Nexus API integration: `nexus-list`
+
+## Overview of the Workflow Architecture
+
+The following diagram illustrates the complete workflow and interactions between components for artifact publication to Maven Central:
+
+```mermaid
+C4Context
+    title Maven Central Publication Workflow - Context Diagram (rc-sync orchestration)
+
+    System(ci, "CI/CD Pipeline", "GitHub Actions, Jenkins, GitLab CI, etc.")
+    
+    System(plugin, "rc-sync Goal", "Central orchestrator for complete publication workflow")
+    
+    
+    System_Boundary(build, "Build System") {
+        System(maven, "Maven Build", "Compiles and packages artifacts")
+        System(profile, "Maven Profile", "Activates rc-sync on deploy phase")
+    }
+    
+    System_Boundary(staging, "Staging Infrastructure") {
+        System(stagingRepo, "Public Staging Repository", "Intermediate repository<br/>(e.g., repo.eclipse.org/cbi-staging)")
+    }
+    
+    System_Boundary(central, "Maven Central Infrastructure") {
+        System(centralStaging, "Maven Central Staging", "Central Portal API<br/>validation and staging")
+        System(mavenCentral, "Maven Central", "Final public repository<br/>(repo.maven.apache.org)")
+    }
+
+    Rel(ci, maven, "Executes: mvn deploy -Pcentral-release")
+    Rel(maven, profile, "Activates")
+    Rel(profile, plugin, "Triggers rc-sync")
+    Rel(maven, stagingRepo, "Deploys build artifacts")
+    
+    Rel(plugin, stagingRepo, "1. rc-download:<br/>Downloads artifacts")
+    Rel(plugin, plugin, "2. rc-bundle:<br/>Creates bundle")
+    Rel(plugin, centralStaging, "3. rc-upload:<br/>Uploads bundle")
+    Rel(plugin, centralStaging, "4. rc-publish:<br/>Publishes deployment")
+    
+    Rel(centralStaging, mavenCentral, "Syncs validated artifacts")
+    
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="3")
+```
+
+**Steps:**
+
+1. **Build Phase**: Maven build compiles, tests, and packages artifacts with signatures
+2. **Staging Phase**: Artifacts are deployed to an intermediate public staging repository
+3. **Download Phase** (`rc-download`): Plugin downloads artifacts from staging repository
+4. **Bundle Phase** (`rc-bundle`): Creates a compliant bundle with all required artifacts
+5. **Upload Phase** (`rc-upload`): Uploads bundle to Maven Central Staging via Publisher API
+6. **Validation Phase**: Central Portal validates bundle content, signatures, and metadata
+7. **Publication Phase** (`rc-publish`): Publishes validated deployment to Maven Central
+8. **Synchronization**: Artifacts become available on Maven Central
 
 ## Central Publisher API Integration
 
