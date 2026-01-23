@@ -162,7 +162,7 @@ public class NexusListMojo extends AbstractNexusMojo {
     /**
      * Displays information about a single artifact.
      */
-    private void displayArtifact(Map<?, ?> item) {
+    protected void displayArtifact(Map<?, ?> item) {
         Object id = item.get("id");
         Object repositoryObj = item.get("repository");
         Object format = item.get("format");

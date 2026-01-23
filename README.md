@@ -38,6 +38,7 @@ A comprehensive Maven plugin for managing artifact synchronization to Maven Cent
     - [rc-list](#rc-list)
     - [rc-status](#rc-status)
     - [nexus-list](#nexus-list)
+    - [nexus-drop](#nexus-drop)
   - [Plugin Parameters](#plugin-parameters)
     - [Core Configuration Parameters](#core-configuration-parameters)
     - [Repository Configuration Parameters](#repository-configuration-parameters)
@@ -100,7 +101,7 @@ The Maven Central Staging Plugin provides a comprehensive set of goals for manag
 - Support for MD5, SHA1, SHA256, and SHA512 checksums
 - Publication workflows
 - Handle reactor builds and multi-module projects
-- Nexus API integration: `nexus-list`
+- Nexus API integration: `nexus-list` and `nexus-drop`
 
 ## Overview of the Workflow Architecture
 
@@ -424,6 +425,7 @@ The plugin provides several categories of goals for comprehensive Maven Central 
 | `rc-status` | Check deployment status | Query current deployment state |
 | `rc-upload` | Upload to staging | Send bundles to Maven Central staging |
 | `nexus-list` | List Nexus artifacts | Search and list artifacts from Nexus Repository Manager |
+| `nexus-drop` | Drop Nexus artifacts | Search and drop artifacts from Nexus Repository Manager |
 
 
 ## Manual Execution Examples
@@ -725,6 +727,31 @@ mvn central-staging-plugins:nexus-list \
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nexus.showDetails` | Boolean | `false` | Display detailed information including download URLs and asset details |
+
+*This goal also uses the [Nexus Parameters](#nexus-parameters)*
+
+**Tips:**
+
+- Always specify `nexus.repository` when possible for optimal search performance
+
+### nexus-drop
+
+Search and drop artifacts from a Nexus Repository Manager instance:
+
+```bash
+mvn central-staging-plugins:nexus-drop \
+  -Dnexus.showDetails=true \
+  -Dnexus.serverId=nexus \
+  -Dnexus.repository=releases
+  -Dnexus.dryRun=true
+```
+
+**nexus-drop Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `nexus.showDetails` | Boolean | `false` | Display detailed information including download URLs and asset details |
+| `nexus.dryRun` | Boolean | `false` | Simulate removal operations without actually executing them |
 
 *This goal also uses the [Nexus Parameters](#nexus-parameters)*
 
