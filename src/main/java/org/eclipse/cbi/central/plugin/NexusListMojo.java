@@ -49,7 +49,7 @@ public class NexusListMojo extends AbstractNexusMojo {
             initClient();
 
             for(MavenProject targetProject : resolveTargetProjects()) {
-                getLog().info("Processing project: " + targetProject.getId());
+                getLog().info("Processing project: " + targetProject.getId().replace("null", "<empty>"));
 
                 // Determine effective search parameters from project if available
                 String effectiveGroup = determineEffectiveGroup(targetProject);

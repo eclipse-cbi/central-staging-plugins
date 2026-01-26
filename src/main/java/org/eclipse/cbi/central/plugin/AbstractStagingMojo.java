@@ -16,7 +16,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Model;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -27,7 +26,6 @@ import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.apache.maven.plugin.MojoFailureException;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -352,37 +350,14 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
      * @return List of Maven projects to process
      */
     protected List<MavenProject> resolveTargetProjects() {
-        // If explicit GAV is provided, create a synthetic Maven project
-        if (this.namespace != null && !this.namespace.isBlank() && this.name != null && !this.name.isBlank()
-                && this.version != null && !this.version.isBlank()) {
-            getLog().info("Explicit GAV provided: " + this.namespace + ":" + this.name + ":" + this.version);
-            Model model = new Model();
-            model.setGroupId(this.namespace);
-            model.setArtifactId(this.name);
-            model.setVersion(this.version);
-            // Default to jar packaging for explicit GAV unless we can determine otherwise
-            model.setPackaging("jar");
-            return List.of(new MavenProject(model));
-        }
-
-        // If we have a project, use reactor projects if present
-        if (this.project != null) {
-            if (this.reactorProjects != null && !this.reactorProjects.isEmpty()) {
-                List<MavenProject> result = new ArrayList<>();
-                for (MavenProject rp : this.reactorProjects) {
-                    if (rp != null) {
-                        result.add(rp);
-                    }
-                }
-                getLog().info("Resolved " + result.size() + " reactor projects for download step.");
-                return result;
-            }
-            // Fallback to current project
-            return List.of(this.project);
-        }
-
-        // This should not happen due to the check in resolveEffectiveGav
-        throw new IllegalStateException("No target projects could be resolved");
+        return ProjectResolver.resolveTargetProjects(
+            this.namespace, 
+            this.name, 
+            this.version, 
+            this.project, 
+            this.reactorProjects, 
+            getLog()
+        );
     }
 
     /**

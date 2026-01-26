@@ -19,12 +19,10 @@ import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.settings.crypto.SettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.SettingsDecryptionResult;
-import org.apache.maven.model.Model;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoFailureException;
 import org.eclipse.cbi.central.NexusClient;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -117,43 +115,14 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
      * @return List of Maven projects to process
      */
     protected List<MavenProject> resolveTargetProjects() {
-        // If explicit GAV is provided, create a synthetic Maven project
-        if (this.group != null && !this.group.isBlank() 
-                && this.artifact != null && !this.artifact.isBlank()
-                && this.version != null && !this.version.isBlank()) {
-
-            getLog().info("Explicit GAV provided: " + this.group + ":" + this.artifact + ":" + this.version);
-
-            Model model = new Model();
-            model.setGroupId(this.group);
-            model.setArtifactId(this.artifact);
-            model.setVersion(this.version);
-
-            // Default to jar packaging for explicit GAV unless we can determine otherwise
-            model.setPackaging("jar");
-            return List.of(new MavenProject(model));
-        }
-
-        // If we have a project, use reactor projects if present
-        if (this.project != null) {
-            if (this.reactorProjects != null && !this.reactorProjects.isEmpty()) {
-                List<MavenProject> result = new ArrayList<>();
-                for (MavenProject rp : this.reactorProjects) {
-                    if (rp != null) {
-                        result.add(rp);
-                    }
-                }
-                getLog().info("Resolved " + result.size() + " reactor projects.");
-                return result;
-            }
-
-            // Fallback to current project
-            return List.of(this.project);
-        }
-
-        // If no project and no explicit GAV, we can't proceed
-        throw new IllegalStateException("No project found and no explicit GAV coordinates provided. " +
-                "Please provide nexus.group, nexus.artifact, and nexus.version parameters.");
+        return ProjectResolver.resolveTargetProjects(
+            this.group, 
+            this.artifact, 
+            this.version, 
+            this.project, 
+            this.reactorProjects, 
+            getLog()
+        );
     }
 
     /**

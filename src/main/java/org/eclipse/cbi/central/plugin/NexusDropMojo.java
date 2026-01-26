@@ -59,14 +59,14 @@ public class NexusDropMojo extends NexusListMojo {
                 if(dryRun) {
                     getLog().info("Dry run enabled: no components were dropped");
                 } else {
-                    logDeleteRespose(client.deleteComponent(componentId));
+                    logDeleteResponse(client.deleteComponent(componentId));
                 }
                 return;
             }
 
             // Otherwise, drop based on GAV search, for each target project
             for(MavenProject targetProject : resolveTargetProjects()) {
-                getLog().info("Processing project: " + targetProject.getId());
+                getLog().info("Processing project: " + targetProject.getId().replace("null", "<empty>"));
                 
                 // Perform search
                 Map<String, Object> result = client.searchComponents(
@@ -105,21 +105,21 @@ public class NexusDropMojo extends NexusListMojo {
                         if(dryRun) {
                             getLog().info("Dry run enabled: no components were dropped");
                         } else {    
-                            logDeleteRespose(client.deleteComponent(id));
+                            logDeleteResponse(client.deleteComponent(id));
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            getLog().error("Failed to list Nexus artifacts", e);
-            throw new MojoFailureException("Failed to list Nexus artifacts", e);
+            getLog().error("Failed to drop Nexus artifacts", e);
+            throw new MojoFailureException("Failed to drop Nexus artifacts", e);
         }
     }
 
     /**
      * Logs the delete response.
      */
-    private void logDeleteRespose(Map<String, Object> result) {
+    private void logDeleteResponse(Map<String, Object> result) {
         //TODO - implement detailed logging of delete response once API response structure is known
         // for example is a json response with details returned?
         getLog().info("Delete response: " + result);
