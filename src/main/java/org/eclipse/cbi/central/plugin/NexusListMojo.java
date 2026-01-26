@@ -181,6 +181,10 @@ public class NexusListMojo extends AbstractNexusMojo {
         if (versionObj != null) {
             display.append(versionObj);
         }
+
+        if (id != null) {
+            display.append(" (id=").append(id).append(")");
+        }
         
         getLog().info("• " + display.toString());
         
