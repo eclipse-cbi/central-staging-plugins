@@ -33,12 +33,31 @@ public abstract class BaseRepositoryClient {
     protected static final String MEDIA_JSON = "application/json";
     
     protected final String baseUrl;
+    protected final String username;
+    protected final String password;
     protected final String bearerToken;
     protected final OkHttpClient client;
     protected final ObjectMapper objectMapper;
 
     /**
-     * Creates a new repository client with the specified authentication and base URL.
+     * Creates a new repository client with Basic Authentication.
+     * 
+     * @param username Username for basic authentication
+     * @param password Password for basic authentication
+     * @param baseUrl Base URL for the API
+     * @param defaultBaseUrl Default base URL if baseUrl is null or empty
+     */
+    protected BaseRepositoryClient(String username, String password, String baseUrl, String defaultBaseUrl) {
+        this.username = username;
+        this.password = password;
+        this.bearerToken = null;
+        this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : defaultBaseUrl;
+        this.client = new OkHttpClient();
+        this.objectMapper = new ObjectMapper();
+    }
+
+    /**
+     * Creates a new repository client with Bearer Token Authentication.
      * 
      * @param bearerToken Authentication token for API
      * @param baseUrl Base URL for the API
@@ -46,6 +65,8 @@ public abstract class BaseRepositoryClient {
      */
     protected BaseRepositoryClient(String bearerToken, String baseUrl, String defaultBaseUrl) {
         this.bearerToken = bearerToken;
+        this.username = null;
+        this.password = null;
         this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : defaultBaseUrl;
         this.client = new OkHttpClient();
         this.objectMapper = new ObjectMapper();
@@ -64,12 +85,24 @@ public abstract class BaseRepositoryClient {
 
     /**
      * Creates a base HTTP request builder with authentication and JSON headers.
+     * Uses HTTP Basic Authentication if username/password are provided,
+     * otherwise uses Bearer Token authentication.
      */
     protected Request.Builder baseRequest(String url) {
-        return new Request.Builder()
+        Request.Builder builder = new Request.Builder()
                 .url(url)
-                .addHeader(HEADER_AUTH, "Bearer " + bearerToken)
                 .addHeader(HEADER_ACCEPT, MEDIA_JSON);
+        
+        if (username != null && password != null) {
+            // Use Basic Authentication
+            String credentials = Credentials.basic(username, password);
+            builder.addHeader(HEADER_AUTH, credentials);
+        } else if (bearerToken != null) {
+            // Use Bearer Token Authentication
+            builder.addHeader(HEADER_AUTH, "Bearer " + bearerToken);
+        }
+        
+        return builder;
     }
 
     /**

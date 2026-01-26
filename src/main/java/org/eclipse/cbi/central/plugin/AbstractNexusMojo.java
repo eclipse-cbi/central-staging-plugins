@@ -32,10 +32,16 @@ import java.util.List;
 public abstract class AbstractNexusMojo extends AbstractMojo {
     
     /**
-     * The bearer token used for authentication with the Nexus Repository Manager API.
+     * The username used for authentication with the Nexus Repository Manager API.
      */
-    @Parameter(property = "nexus.bearerToken")
-    protected String bearerToken;
+    @Parameter(property = "nexus.username")
+    protected String username;
+
+    /**
+     * The password used for authentication with the Nexus Repository Manager API.
+     */
+    @Parameter(property = "nexus.password")
+    protected String password;
 
     /**
      * The server ID used to retrieve credentials from settings.xml.
@@ -126,18 +132,43 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
     }
 
     /**
-     * Retrieves the bearer token for authentication. Checks the parameter, then
+     * Retrieves the username for authentication. Checks the parameter, then
      * settings.xml server entry.
      *
-     * @return the bearer token string
-     * @throws MojoFailureException if no token can be obtained
+     * @return the username string
+     * @throws MojoFailureException if no username can be obtained
      */
-    protected String getBearerToken() throws MojoFailureException {
-        if (bearerToken != null && !bearerToken.isEmpty()) {
-            return bearerToken;
+    protected String getUsername() throws MojoFailureException {
+        if (username != null && !username.isEmpty()) {
+            return username;
         }
         
-        // Try to get token from settings.xml
+        // Try to get username from settings.xml
+        if (settings != null && serverId != null) {
+            Server server = settings.getServer(serverId);
+            if (server != null && server.getUsername() != null) {
+                return server.getUsername();
+            }
+        }
+        
+        throw new MojoFailureException(
+            "No username found. Provide -Dnexus.username=<username> or configure server '" 
+            + serverId + "' in settings.xml");
+    }
+
+    /**
+     * Retrieves the password for authentication. Checks the parameter, then
+     * settings.xml server entry.
+     *
+     * @return the password string
+     * @throws MojoFailureException if no password can be obtained
+     */
+    protected String getPassword() throws MojoFailureException {
+        if (password != null && !password.isEmpty()) {
+            return password;
+        }
+        
+        // Try to get password from settings.xml
         if (settings != null && serverId != null) {
             Server server = settings.getServer(serverId);
             if (server != null) {
@@ -146,7 +177,7 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
         }
         
         throw new MojoFailureException(
-            "No bearer token found. Provide -Dnexus.bearerToken=<token> or configure server '" 
+            "No password found. Provide -Dnexus.password=<password> or configure server '" 
             + serverId + "' in settings.xml");
     }
 
@@ -173,11 +204,12 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
      * @throws MojoFailureException if initialization fails
      */
     protected void initClient() throws MojoFailureException {
-        String token = getBearerToken();
+        String user = getUsername();
+        String pass = getPassword();
         if (nexusApiUrl != null && !nexusApiUrl.isEmpty()) {
-            client = new NexusClient(token, nexusApiUrl);
+            client = new NexusClient(user, pass, nexusApiUrl);
         } else {
-            client = new NexusClient(token);
+            client = new NexusClient(user, pass);
         }
         getLog().info("Nexus client initialized with base URL: " + client.getBaseUrl());
     }

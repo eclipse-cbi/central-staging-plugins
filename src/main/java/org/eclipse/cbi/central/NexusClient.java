@@ -42,20 +42,22 @@ public class NexusClient extends BaseRepositoryClient {
     /**
      * Creates a new Nexus Repository Manager API client with default base URL.
      * 
-     * @param bearerToken Authentication token for Nexus Repository Manager API
+     * @param username Username for basic authentication
+     * @param password Password for basic authentication
      */
-    public NexusClient(String bearerToken) {
-        this(bearerToken, null);
+    public NexusClient(String username, String password) {
+        this(username, password, null);
     }
 
     /**
      * Creates a new Nexus Repository Manager API client with custom base URL.
      * 
-     * @param bearerToken Authentication token for Nexus Repository Manager API
+     * @param username Username for basic authentication
+     * @param password Password for basic authentication
      * @param baseUrl Custom API base URL (defaults to https://repo3.eclipse.org/service/rest/v1)
      */
-    public NexusClient(String bearerToken, String baseUrl) {
-        super(bearerToken, baseUrl, DEFAULT_BASE_URL);
+    public NexusClient(String username, String password, String baseUrl) {
+        super(username, password, baseUrl, DEFAULT_BASE_URL);
     }
 
     /**
