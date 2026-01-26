@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Eclipse Foundation and others.
+ * Copyright (c) 2025, 2026 Eclipse Foundation and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -12,6 +12,7 @@ package org.eclipse.cbi.central.plugin;
 
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugin.MojoFailureException;
 import java.util.Map;
@@ -25,33 +26,6 @@ import java.util.List;
 @Mojo(name = "nexus-list", defaultPhase = LifecyclePhase.NONE, requiresProject = false)
 public class NexusListMojo extends AbstractNexusMojo {
     
-    /**
-     * The Nexus repository to search in. If not set, searches across all repositories.
-     */
-    @Parameter(property = "nexus.repository")
-    protected String repository;
-
-    /**
-     * The group/organization/namespace to filter by (e.g., org.eclipse.example).
-     * Defaults to the project's groupId if available.
-     */
-    @Parameter(property = "nexus.group")
-    protected String group;
-
-    /**
-     * The artifact ID to filter by.
-     * Defaults to the project's artifactId if available.
-     */
-    @Parameter(property = "nexus.artifact")
-    protected String artifact;
-
-    /**
-     * The version to filter by.
-     * If not set, all versions will be returned.
-     */
-    @Parameter(property = "nexus.version")
-    protected String version;
-
     /**
      * If true, displays detailed information for each artifact.
      */
@@ -73,25 +47,28 @@ public class NexusListMojo extends AbstractNexusMojo {
             }
             
             initClient();
-            
-            // Determine effective search parameters from project if available
-            String effectiveGroup = determineEffectiveGroup();
-            String effectiveArtifact = determineEffectiveArtifact();
-            
-            // Log search criteria
-            logSearchCriteria(effectiveGroup, effectiveArtifact);
-            
-            // Perform search
-            Map<String, Object> result = client.searchComponents(
-                repository, 
-                effectiveGroup, 
-                effectiveArtifact, 
-                version
-            );
-            
-            // Process and display results
-            displaySearchResults(result);
-            
+
+            for(MavenProject targetProject : resolveTargetProjects()) {
+                getLog().info("Processing project: " + targetProject.getId());
+
+                // Determine effective search parameters from project if available
+                String effectiveGroup = determineEffectiveGroup(targetProject);
+                String effectiveArtifact = determineEffectiveArtifact(targetProject);
+
+                // Log search criteria
+                logSearchCriteria(effectiveGroup, effectiveArtifact);
+                
+                // Perform search
+                Map<String, Object> result = client.searchComponents(
+                    repository, 
+                    effectiveGroup, 
+                    effectiveArtifact, 
+                    version
+                );
+
+                // Process and display results
+                displaySearchResults(result);   
+            }
         } catch (Exception e) {
             getLog().error("Failed to list Nexus artifacts", e);
             throw new MojoFailureException("Failed to list Nexus artifacts", e);
@@ -99,29 +76,15 @@ public class NexusListMojo extends AbstractNexusMojo {
     }
 
     /**
-     * Checks if the project is valid (has a pom.xml file).
-     */
-    private boolean isValidProject() {
-        if (project == null) {
-            return false;
-        }
-        // Check if the project has a valid pom file
-        if (project.getFile() == null || !project.getFile().exists()) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
      * Determines the effective group parameter.
      * Only uses project groupId if explicitly set via nexus.group parameter
      * or if a valid pom.xml exists in the current directory.
      */
-    private String determineEffectiveGroup() {
+    private String determineEffectiveGroup(MavenProject targetProject) {
         if (group != null && !group.isEmpty()) {
             return group;
-        } else if (isValidProject()) {
-            return project.getGroupId();
+        } else if (targetProject != null) {
+            return targetProject.getGroupId();
         }
         return null;
     }
@@ -131,11 +94,11 @@ public class NexusListMojo extends AbstractNexusMojo {
      * Only uses project artifactId if explicitly set via nexus.artifact parameter
      * or if a valid pom.xml exists in the current directory.
      */
-    private String determineEffectiveArtifact() {
+    private String determineEffectiveArtifact(MavenProject targetProject) {
         if (artifact != null && !artifact.isEmpty()) {
             return artifact;
-        } else if (isValidProject()) {
-            return project.getArtifactId();
+        } else if (targetProject != null) {
+            return targetProject.getArtifactId();
         }
         return null;
     }
@@ -199,7 +162,7 @@ public class NexusListMojo extends AbstractNexusMojo {
     /**
      * Displays information about a single artifact.
      */
-    private void displayArtifact(Map<?, ?> item) {
+    protected void displayArtifact(Map<?, ?> item) {
         Object id = item.get("id");
         Object repositoryObj = item.get("repository");
         Object format = item.get("format");

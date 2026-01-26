@@ -1,5 +1,5 @@
 <!--
-    Copyright (c) 2025 Eclipse Foundation and contributors.
+    Copyright (c) 2025, 2026 Eclipse Foundation and contributors.
     This program and the accompanying materials are made available under the terms of the Eclipse Public License v. 2.0
     which is available at https://www.eclipse.org/legal/epl-2.0/
     SPDX-License-Identifier: EPL-2.0
@@ -38,6 +38,7 @@ A comprehensive Maven plugin for managing artifact synchronization to Maven Cent
     - [rc-list](#rc-list)
     - [rc-status](#rc-status)
     - [nexus-list](#nexus-list)
+    - [nexus-drop](#nexus-drop)
   - [Plugin Parameters](#plugin-parameters)
     - [Core Configuration Parameters](#core-configuration-parameters)
     - [Repository Configuration Parameters](#repository-configuration-parameters)
@@ -100,7 +101,7 @@ The Maven Central Staging Plugin provides a comprehensive set of goals for manag
 - Support for MD5, SHA1, SHA256, and SHA512 checksums
 - Publication workflows
 - Handle reactor builds and multi-module projects
-- Nexus API integration: `nexus-list`
+- Nexus API integration: `nexus-list` and `nexus-drop`
 
 ## Overview of the Workflow Architecture
 
@@ -424,6 +425,7 @@ The plugin provides several categories of goals for comprehensive Maven Central 
 | `rc-status` | Check deployment status | Query current deployment state |
 | `rc-upload` | Upload to staging | Send bundles to Maven Central staging |
 | `nexus-list` | List Nexus artifacts | Search and list artifacts from Nexus Repository Manager |
+| `nexus-drop` | Drop Nexus artifacts | Search and drop artifacts from Nexus Repository Manager |
 
 
 ## Manual Execution Examples
@@ -705,6 +707,10 @@ mvn central-staging-plugins:rc-status \
 - Retrieve error information for failed deployments
 - Check publication status
 
+**rc-status Parameters**:
+
+*This goal uses only the [Core Configuration Parameters](#core-configuration-parameters)*
+
 ### nexus-list
 
 Search and list artifacts from a Nexus Repository Manager instance:
@@ -713,31 +719,45 @@ Search and list artifacts from a Nexus Repository Manager instance:
 mvn central-staging-plugins:nexus-list \
   -Dnexus.showDetails=true \
   -Dnexus.serverId=nexus \
-  -Dnexus.repository=releases \
-  -Dnexus.group=org.eclipse.cbi
+  -Dnexus.repository=releases
 ```
 
 **nexus-list Parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `nexus.repository` | String | - | The Nexus repository to search in. If not set, searches across all repositories (slower) |
-| `nexus.group` | String | `${project.groupId}` | The group/organization/namespace to filter by (e.g., org.eclipse.example) |
-| `nexus.artifact` | String | `${project.artifactId}` | The artifact ID to filter by |
-| `nexus.version` | String | - | The version to filter by. If not set, all versions will be returned |
 | `nexus.showDetails` | Boolean | `false` | Display detailed information including download URLs and asset details |
-| `nexus.bearerToken` | String | - | Authentication token for Nexus Repository Manager API |
-| `nexus.serverId` | String | `nexus` | Server ID for retrieving credentials from settings.xml |
-| `nexus.apiUrl` | String | `https://repo3.eclipse.org/service/rest/v1` | Nexus Repository Manager API base URL |
+
+*This goal also uses the [Nexus Parameters](#nexus-parameters)*
 
 **Tips:**
 
 - Always specify `nexus.repository` when possible for optimal search performance
 
+### nexus-drop
 
-**rc-status Parameters**:
+Search and drop artifacts from a Nexus Repository Manager instance:
 
-*This goal uses only the [Core Configuration Parameters](#core-configuration-parameters)*
+```bash
+mvn central-staging-plugins:nexus-drop \
+  -Dnexus.showDetails=true \
+  -Dnexus.serverId=nexus \
+  -Dnexus.repository=releases
+  -Dnexus.dryRun=true
+```
+
+**nexus-drop Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `nexus.showDetails` | Boolean | `false` | Display detailed information including download URLs and asset details |
+| `nexus.dryRun` | Boolean | `false` | Simulate removal operations without actually executing them |
+
+*This goal also uses the [Nexus Parameters](#nexus-parameters)*
+
+**Tips:**
+
+- Always specify `nexus.repository` when possible for optimal search performance
 
 ## Plugin Parameters
 
@@ -834,6 +854,18 @@ mvn central-staging-plugins:rc-sync \
 The staging directory structure is controlled by two parameters:
 - `central.syncStagingDir`: The base directory path (defaults to `${project.build.directory}`)
 - `central.syncStagingDirName`: The subdirectory name within the base directory (defaults to `sync-staging`)
+
+### Nexus Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `nexus.serverId` | String | `nexus` | Maven settings server ID for authentication |
+| `nexus.apiUrl` | String | `https://repo3.eclipse.org/service/rest/v1` | Nexus Repository Manager API endpoint URL |
+| `nexus.bearerToken` | String | - | Authentication token for Nexus Repository Manager API |
+| `nexus.repository` | String | - | The Nexus repository to search in. If not set, searches across all repositories (slower) |
+| `nexus.group` | String | `${project.groupId}` | The group/organization/namespace to filter by (e.g., org.eclipse.example) |
+| `nexus.artifact` | String | `${project.artifactId}` | The artifact ID to filter by |
+| `nexus.version` | String | `${project.artifactId}` | The version to filter by |
 
 **Examples:**
 ```bash
