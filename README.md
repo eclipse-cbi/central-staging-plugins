@@ -47,6 +47,7 @@ A comprehensive Maven plugin for managing artifact synchronization to Maven Cent
     - [Validation Parameters](#validation-parameters)
     - [Drop Configuration Parameters](#drop-configuration-parameters)
     - [File and Directory Parameters](#file-and-directory-parameters)
+    - [Nexus Parameters](#nexus-parameters)
   - [Creating an Artifact Bundle for Upload](#creating-an-artifact-bundle-for-upload)
     - [Bundle Structure Example](#bundle-structure-example)
     - [Required Artifacts](#required-artifacts)
@@ -865,7 +866,7 @@ The staging directory structure is controlled by two parameters:
 | `nexus.repository` | String | - | The Nexus repository to search in. If not set, searches across all repositories (slower) |
 | `nexus.group` | String | `${project.groupId}` | The group/organization/namespace to filter by (e.g., org.eclipse.example) |
 | `nexus.artifact` | String | `${project.artifactId}` | The artifact ID to filter by |
-| `nexus.version` | String | `${project.artifactId}` | The version to filter by |
+| `nexus.version` | String | `${project.artifactId}` | The version to filter by (NOTE: "<version>-SNAPSHOT" is not working, use wildcard instead "<version>-*") |
 
 **Examples:**
 ```bash
