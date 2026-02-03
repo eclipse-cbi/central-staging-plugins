@@ -115,7 +115,7 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
                 if (this.bearerCreate) {
                     String username = decryptedServer.getUsername();
                     String password = decryptedServer.getPassword();
-                    getLog().info("Building bearer token from username:password in settings.xml server entry: "
+                    getLog().info("Building bearer token from username(" + username + "):password in settings.xml server entry: "
                             + this.serverId);
                     if (username != null && !username.isEmpty() && password != null && !password.isEmpty()) {
                         String credentials = username + ":" + password;
