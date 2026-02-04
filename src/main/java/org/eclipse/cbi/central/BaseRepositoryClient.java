@@ -93,13 +93,15 @@ public abstract class BaseRepositoryClient {
                 .url(url)
                 .addHeader(HEADER_ACCEPT, MEDIA_JSON);
         
-        if (username != null && password != null) {
+        if (this.username != null && this.password != null) {
             // Use Basic Authentication
-            String credentials = Credentials.basic(username, password);
+            String credentials = Credentials.basic(this.username, this.password);
             builder.addHeader(HEADER_AUTH, credentials);
         } else if (bearerToken != null) {
             // Use Bearer Token Authentication
-            builder.addHeader(HEADER_AUTH, "Bearer " + bearerToken);
+            builder.addHeader(HEADER_AUTH, "Bearer " + this.bearerToken);
+        } else {
+            throw new IllegalStateException("No authentication method provided.");
         }
         
         return builder;

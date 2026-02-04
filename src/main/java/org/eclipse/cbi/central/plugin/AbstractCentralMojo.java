@@ -30,7 +30,7 @@ import java.util.Base64;
  * Handles common configuration and client initialization.
  */
 public abstract class AbstractCentralMojo extends AbstractMojo {
-    
+
     /**
      * The bearer token used for authentication with the Central Portal API.
      */
@@ -69,7 +69,7 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
      */
     @Parameter(property = "central.removeFailedOnly", defaultValue = "true")
     protected boolean removeFailedOnly;
-    
+
     /**
      * The Maven settings instance, used to retrieve server credentials.
      */
@@ -115,23 +115,47 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
                 if (this.bearerCreate) {
                     String username = decryptedServer.getUsername();
                     String password = decryptedServer.getPassword();
-                    getLog().info("Building bearer token from username(" + username + "):password in settings.xml server entry: "
+                    getLog().info("Building bearer token from username(" + username
+                            + "):password in settings.xml server entry: "
                             + this.serverId);
                     if (username != null && !username.isEmpty() && password != null && !password.isEmpty()) {
                         String credentials = username + ":" + password;
                         return Base64.getEncoder().encodeToString(credentials.getBytes());
                     } else {
+                        String missingFields = null;
+                        if (username == null || username.isEmpty()) {
+                            missingFields = "username";
+                        }
+                        if (password == null || password.isEmpty()) {
+                            if (missingFields != null) {
+                                missingFields += " and password are missing";
+                            } else {
+                                missingFields = "password is missing";
+                            }
+                        } else {
+                            missingFields += " is missing";
+                        }   
+
                         throw new IllegalArgumentException(
-                                "central.bearerCreate is true but username or password is missing in settings.xml server '"
+                                "central.bearerCreate is true but " + missingFields
+                                        + " in settings.xml server '"
                                         + this.serverId + "'.");
                     }
+                }else {
+                    // Otherwise, use the password field as the bearer token directly
+                    if (decryptedServer.getPassword() != null && !decryptedServer.getPassword().isEmpty()) {
+                        getLog().info("Using bearer token from settings.xml server entry: " + this.serverId);
+                        return decryptedServer.getPassword();
+                    } else {
+                        throw new IllegalArgumentException(
+                                "Bearer token is missing in field password in settings.xml server '" + this.serverId + "'.");
+                    }
                 }
-                // Otherwise, use the password field as the bearer token directly
-                if (decryptedServer.getPassword() != null && !decryptedServer.getPassword().isEmpty()) {
-                    getLog().info("Using bearer token from settings.xml server entry: " + this.serverId);
-                    return decryptedServer.getPassword();
-                }
+            } else {
+                getLog().warn("No server entry found in settings.xml for id: " + this.serverId);
             }
+        } else {
+            getLog().warn("Maven settings instance is null; cannot retrieve server credentials.");
         }
         throw new IllegalArgumentException(
                 "Bearer token must be provided via -Dcentral.bearerToken or settings.xml server '" + this.serverId
