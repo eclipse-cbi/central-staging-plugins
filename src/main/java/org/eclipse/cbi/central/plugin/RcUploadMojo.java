@@ -13,7 +13,6 @@
 package org.eclipse.cbi.central.plugin;
 
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugin.MojoFailureException;
 import org.eclipse.cbi.central.DeploymentConstants;

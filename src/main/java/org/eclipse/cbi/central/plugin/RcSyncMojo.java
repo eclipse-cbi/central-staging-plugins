@@ -17,11 +17,6 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugin.MojoFailureException;
 
-import java.io.File;
-import java.util.List;
-
-import org.apache.maven.project.MavenProject;
-
 import org.eclipse.aether.RepositorySystem;
 
 /**

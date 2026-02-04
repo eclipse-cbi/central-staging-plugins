@@ -13,7 +13,6 @@
 package org.eclipse.cbi.central;
 
 import okhttp3.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Map;
 
