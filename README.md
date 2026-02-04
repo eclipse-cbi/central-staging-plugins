@@ -63,6 +63,10 @@ A comprehensive Maven plugin for managing artifact synchronization to Maven Cent
       - [Retry Failed Upload](#retry-failed-upload)
       - [Testing](#testing)
   - [Authentication Setup](#authentication-setup)
+    - [Option 1: Using a pre-generated bearer token (default behavior)](#option-1-using-a-pre-generated-bearer-token-default-behavior)
+    - [Option 2: Automatic bearer token generation](#option-2-automatic-bearer-token-generation)
+    - [How to produce a bearer token manually?](#how-to-produce-a-bearer-token-manually)
+    - [How to test the bearer token?](#how-to-test-the-bearer-token)
   - [GitHub Actions Integration](#github-actions-integration)
     - [Release to central with rc-sync](#release-to-central-with-rc-sync)
   - [Troubleshooting](#troubleshooting)
@@ -1103,21 +1107,22 @@ mvn central-staging-plugins:rc-sync \
 
 Add the following to your `~/.m2/settings.xml`:
 
-**Option 1: Using a pre-generated bearer token (default behavior)**
+### Option 1: Using a pre-generated bearer token (default behavior)
+
+Use password field as the bearer token directly.
 
 ```xml
 <settings>
   <servers>
     <server>
       <id>central</id>
-      <username>your-central-token</username>
-      <password>your-central-password</password>
+      <password>your-bearer-token</password>
     </server>
   </servers>
 </settings>
 ```
 
-**Option 2: Automatic bearer token generation**
+### Option 2: Automatic bearer token generation
 
 If you prefer to store your username and password directly, you can enable automatic bearer token generation:
 
@@ -1126,8 +1131,8 @@ If you prefer to store your username and password directly, you can enable autom
   <servers>
     <server>
       <id>central</id>
-      <username>your_username</username>
-      <password>your_password</password>
+      <username>your-central-username</username>
+      <password>your-central-password</password>
     </server>
   </servers>
 </settings>
@@ -1151,11 +1156,28 @@ mvn central-staging-plugins:rc-publish -Dcentral.serverId=myserverid
 
 The plugin will automatically use the token from the server with id `central` (or your custom id) if `-Dcentral.bearerToken` is not provided.
 
-How to produce a bearer token?
+### How to produce a bearer token manually?
 
 ```shell
 $ printf "example_username:example_password" | base64
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+### How to test the bearer token?
+
+```shell
+curl -X 'POST' \
+  'https://central.sonatype.com/api/v1/publisher/deployments/files' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "page": 0,
+  "size": 500,
+  "sortField": "createdTimestamp",
+  "sortDirection": "desc",
+  "pathStarting": "org/sonatype/nexus/"
+}'
 ```
 
 ## GitHub Actions Integration
