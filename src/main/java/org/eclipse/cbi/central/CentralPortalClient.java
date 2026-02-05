@@ -205,13 +205,8 @@ public class CentralPortalClient extends BaseRepositoryClient {
                 .addFormDataPart("bundle", bundleFile.getFileName().toString(), fileBody)
                 .build();
 
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader(HEADER_AUTH, "Bearer " + bearerToken)
-                .addHeader("accept", "text/plain")
-                .post(formBody)
-                .build();
-
+        Request request = baseRequest(url).addHeader("accept", "text/plain").post(formBody).build();
+        
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             String body = response.body() != null ? response.body().string() : "";
