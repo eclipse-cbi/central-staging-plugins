@@ -134,21 +134,22 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
                             }
                         } else {
                             missingFields += " is missing";
-                        }   
+                        }
 
                         throw new IllegalArgumentException(
                                 "central.bearerCreate is true but " + missingFields
                                         + " in settings.xml server '"
                                         + this.serverId + "'.");
                     }
-                }else {
+                } else {
                     // Otherwise, use the password field as the bearer token directly
                     if (decryptedServer.getPassword() != null && !decryptedServer.getPassword().isEmpty()) {
                         getLog().info("Using bearer token from settings.xml server entry: " + this.serverId);
                         return decryptedServer.getPassword();
                     } else {
                         throw new IllegalArgumentException(
-                                "Bearer token is missing in field password in settings.xml server '" + this.serverId + "'.");
+                                "Bearer token is missing in field password in settings.xml server '" + this.serverId
+                                        + "'.");
                     }
                 }
             } else {

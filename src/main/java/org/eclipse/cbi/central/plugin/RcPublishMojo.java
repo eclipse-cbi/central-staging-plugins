@@ -83,7 +83,8 @@ public class RcPublishMojo extends AbstractCentralMojo {
                     }
                 }
             } else {
-                getLog().warn("DeploymentId " + effectiveDeploymentId + " is not in a publishable state (VALIDATED or PUBLISHING). Current state: "
+                getLog().warn("DeploymentId " + effectiveDeploymentId
+                        + " is not in a publishable state (VALIDATED or PUBLISHING). Current state: "
                         + state);
                 throw new IllegalArgumentException("DeploymentId " + effectiveDeploymentId
                         + " is not in a publishable state (VALIDATED or PUBLISHING). Current state: " + state);
@@ -131,11 +132,12 @@ public class RcPublishMojo extends AbstractCentralMojo {
     }
 
     /**
-     * Checks if the deployment state is publishable (VALIDATED or already PUBLISHING).
+     * Checks if the deployment state is publishable (VALIDATED or already
+     * PUBLISHING).
      */
     private boolean isPublishableState(Object stateObj) {
-        return stateObj != null && 
-               (DeploymentConstants.VALIDATED_STATE.equals(stateObj.toString()) ||
-                DeploymentConstants.PUBLISHING_STATE.equals(stateObj.toString()));
+        return stateObj != null &&
+                (DeploymentConstants.VALIDATED_STATE.equals(stateObj.toString()) ||
+                        DeploymentConstants.PUBLISHING_STATE.equals(stateObj.toString()));
     }
 }

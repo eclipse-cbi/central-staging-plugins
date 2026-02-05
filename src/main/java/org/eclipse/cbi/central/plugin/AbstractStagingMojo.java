@@ -29,7 +29,8 @@ import java.io.File;
 import java.util.List;
 
 /**
- * Abstract base class for staging-related mojos with common constants and properties.
+ * Abstract base class for staging-related mojos with common constants and
+ * properties.
  */
 public abstract class AbstractStagingMojo extends AbstractCentralMojo {
 
@@ -219,11 +220,13 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
      */
     @Parameter(property = "central.forceSignArtifacts", defaultValue = "false")
     protected boolean forceSignArtifacts;
-    
-   /**
+
+    /**
      * Whether to automatically publish the deployment after validation.
-     * If true, the deployment will automatically progress to PUBLISHING when validation passes (AUTOMATIC mode).
-     * If false, the deployment will stop in VALIDATED state and require manual approval (USER_MANAGED mode).
+     * If true, the deployment will automatically progress to PUBLISHING when
+     * validation passes (AUTOMATIC mode).
+     * If false, the deployment will stop in VALIDATED state and require manual
+     * approval (USER_MANAGED mode).
      */
     @Parameter(property = "central.automaticPublishing", defaultValue = "false")
     protected boolean automaticPublishing;
@@ -261,7 +264,8 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
 
     // Failure Handling Configuration
     /**
-     * If true, fail the build when sources or javadoc artifacts cannot be processed.
+     * If true, fail the build when sources or javadoc artifacts cannot be
+     * processed.
      */
     @Parameter(property = "central.failOnMissingSourcesJavadoc", defaultValue = "false")
     protected boolean failOnMissingSourcesJavadoc;
@@ -284,7 +288,7 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
      */
     @Parameter(property = "central.showMavenGoalOutput", defaultValue = "false")
     protected boolean showMavenGoalOutput;
-    
+
     /**
      * Maximum wait time in seconds for validation to complete.
      */
@@ -305,7 +309,8 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
 
     /**
      * If true, wait for the complete publishing process to finish.
-     * If false, return after validation is complete (for USER_MANAGED) or after publishing starts (for AUTOMATIC).
+     * If false, return after validation is complete (for USER_MANAGED) or after
+     * publishing starts (for AUTOMATIC).
      */
     @Parameter(property = "central.waitForCompletion", defaultValue = "false")
     protected boolean waitForCompletion;
@@ -341,7 +346,7 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
     // ================================================================================================
     // SHARED UTILITY METHODS
     // ================================================================================================
-    
+
     /**
      * Resolves the target projects to process based on provided parameters.
      * If explicit GAV is provided, creates a synthetic project.
@@ -351,17 +356,17 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
      */
     protected List<MavenProject> resolveTargetProjects() {
         return ProjectResolver.resolveTargetProjects(
-            this.namespace, 
-            this.name, 
-            this.version, 
-            this.project, 
-            this.reactorProjects, 
-            getLog()
-        );
+                this.namespace,
+                this.name,
+                this.version,
+                this.project,
+                this.reactorProjects,
+                getLog());
     }
 
     /**
-     * Checks if the packaging type is an Eclipse-specific packaging that should include P2 metadata.
+     * Checks if the packaging type is an Eclipse-specific packaging that should
+     * include P2 metadata.
      * 
      * @param packaging The packaging type to check
      * @return true if it's an Eclipse packaging type
@@ -432,9 +437,11 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
     }
 
     /**
-     * Executes a Maven goal with the specified properties and handles common error scenarios.
+     * Executes a Maven goal with the specified properties and handles common error
+     * scenarios.
      * 
-     * @param goal         The Maven goal to execute (e.g., "dependency:get", "dependency:copy")
+     * @param goal         The Maven goal to execute (e.g., "dependency:get",
+     *                     "dependency:copy")
      * @param properties   The properties to pass to the goal
      * @param packaging    The packaging type of the artifact for error handling
      * @param artifactSpec The artifact specification for error messages
@@ -494,8 +501,10 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
     }
 
     /**
-     * Handles Maven goal execution failures for different types of artifacts and files.
-     * This method should be overridden by subclasses to provide specific error handling.
+     * Handles Maven goal execution failures for different types of artifacts and
+     * files.
+     * This method should be overridden by subclasses to provide specific error
+     * handling.
      * 
      * @param artifactSpec The artifact specification that failed
      * @param packaging    The packaging type of the artifact

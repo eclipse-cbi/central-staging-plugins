@@ -49,15 +49,15 @@ public class RcListMojo extends AbstractCentralMojo {
     public void execute() throws MojoFailureException {
         try {
             getLog().info("Starting rc-list goal");
-            
+
             // Skip execution root check if no project
             if (project != null && !project.isExecutionRoot()) {
                 getLog().info("Skipping rc-list: not execution root");
                 return;
             }
-            
+
             initClient();
-            
+
             // Determine effective namespace
             String effectiveNamespace;
             if (namespace != null && !namespace.isEmpty()) {
@@ -65,9 +65,10 @@ public class RcListMojo extends AbstractCentralMojo {
             } else if (project != null) {
                 effectiveNamespace = project.getGroupId();
             } else {
-                throw new MojoFailureException("The 'namespace' parameter is required when running without a Maven project. Use -Dcentral.namespace=<your-namespace>");
+                throw new MojoFailureException(
+                        "The 'namespace' parameter is required when running without a Maven project. Use -Dcentral.namespace=<your-namespace>");
             }
-            
+
             Map<String, Object> result = client.listDeployments(effectiveNamespace, 0, 500, "createTimestamp", "desc");
             Object deploymentsObj = result.get(DeploymentConstants.DEPLOYMENTS);
             if (deploymentsObj instanceof java.util.List) {

@@ -19,7 +19,8 @@ import java.util.Map;
 /**
  * Central Portal API Client for Maven Central staging operations.
  * 
- * This client provides a Java interface to the Central Publisher API available at
+ * This client provides a Java interface to the Central Publisher API available
+ * at
  * https://central.sonatype.com/api/v1/publisher. All operations are based on
  * Sonatype's staging model for Maven Central publication.
  * 
@@ -29,7 +30,8 @@ import java.util.Map;
  * 3. Publication to make artifacts publicly available
  * 4. Optional cleanup of staging deployments
  * 
- * @see <a href="https://central.sonatype.com/api-doc">Central Publisher API Documentation</a>
+ * @see <a href="https://central.sonatype.com/api-doc">Central Publisher API
+ *      Documentation</a>
  */
 public class CentralPortalClient extends BaseRepositoryClient {
     // Context strings for error descriptions
@@ -55,7 +57,8 @@ public class CentralPortalClient extends BaseRepositoryClient {
      * Creates a new Central Portal API client with custom base URL.
      * 
      * @param bearerToken Authentication token for Central Publisher API
-     * @param baseUrl Custom API base URL (defaults to https://central.sonatype.com/api/v1/publisher)
+     * @param baseUrl     Custom API base URL (defaults to
+     *                    https://central.sonatype.com/api/v1/publisher)
      */
     public CentralPortalClient(String bearerToken, String baseUrl) {
         super(bearerToken, baseUrl, DEFAULT_BASE_URL);
@@ -183,7 +186,8 @@ public class CentralPortalClient extends BaseRepositoryClient {
     /**
      * Uploads a bundle (zip file) to Central Portal staging area.
      * 
-     * This operation corresponds to the staging phase of Sonatype's publication model.
+     * This operation corresponds to the staging phase of Sonatype's publication
+     * model.
      * The uploaded bundle enters a staging state where it undergoes validation
      * before it can be published to Maven Central.
      * 
@@ -191,13 +195,15 @@ public class CentralPortalClient extends BaseRepositoryClient {
      * 
      * @param bundleFile     The path to the zip file to upload
      * @param bundleName     The name for the bundle (for identification)
-     * @param publishingType The publishing type (e.g., "USER_MANAGED" for manual publishing)
+     * @param publishingType The publishing type (e.g., "USER_MANAGED" for manual
+     *                       publishing)
      * @return The deployment ID as a string (used for subsequent operations)
      * @throws IOException if the upload fails or API returns an error
      */
-    public String uploadBundle(java.nio.file.Path bundleFile, String bundleName, String publishingType) throws IOException {
+    public String uploadBundle(java.nio.file.Path bundleFile, String bundleName, String publishingType)
+            throws IOException {
         String url = baseUrl + "/upload?name=" + bundleName + "&publishingType=" + publishingType;
-        
+
         // Create multipart form data for file upload
         RequestBody fileBody = RequestBody.create(bundleFile.toFile(), MediaType.parse("application/zip"));
         RequestBody formBody = new MultipartBody.Builder()
@@ -206,22 +212,26 @@ public class CentralPortalClient extends BaseRepositoryClient {
                 .build();
 
         Request request = baseRequest(url).addHeader("accept", "text/plain").post(formBody).build();
-        
+
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             String body = response.body() != null ? response.body().string() : "";
-            
+
             if (code == 201 || code == 200) {
                 // The deployment ID is returned as plain text
                 return body.trim();
             } else if (code == 400) {
-                throw new IOException("Wrong authorization data (user/password or token) - " + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
+                throw new IOException("Wrong authorization data (user/password or token) - " + CTX_UPLOAD_BUNDLE + " ("
+                        + code + "): " + body);
             } else if (code == 401) {
-                throw new IOException("The user does not have an active session or is not authenticated - " + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
+                throw new IOException("The user does not have an active session or is not authenticated - "
+                        + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
             } else if (code == 403) {
-                throw new IOException("The user is not authorized to perform this action - " + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
+                throw new IOException("The user is not authorized to perform this action - " + CTX_UPLOAD_BUNDLE + " ("
+                        + code + "): " + body);
             } else if (code == 500) {
-                throw new IOException("Return error message on bundle upload - " + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
+                throw new IOException(
+                        "Return error message on bundle upload - " + CTX_UPLOAD_BUNDLE + " (" + code + "): " + body);
             } else {
                 throw new IOException("Unexpected HTTP code " + code + ": " + body);
             }

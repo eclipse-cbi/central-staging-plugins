@@ -46,7 +46,8 @@ public class RcUploadMojo extends AbstractStagingMojo {
             validateBundleFile();
 
             // Upload bundle directly
-            String deploymentId = uploadBundle(this.syncBundleFile.toPath(), determineBundleName(), getPublishingType());
+            String deploymentId = uploadBundle(this.syncBundleFile.toPath(), determineBundleName(),
+                    getPublishingType());
             getLog().info("Upload initiated with deployment ID: " + deploymentId);
 
             // Wait for validation
@@ -92,7 +93,8 @@ public class RcUploadMojo extends AbstractStagingMojo {
      * Gets the publishing type string based on the automaticPublishing boolean.
      */
     private String getPublishingType() {
-        return automaticPublishing ? DeploymentConstants.PUBLISHING_TYPE_AUTOMATIC : DeploymentConstants.PUBLISHING_TYPE_USER_MANAGED;
+        return automaticPublishing ? DeploymentConstants.PUBLISHING_TYPE_AUTOMATIC
+                : DeploymentConstants.PUBLISHING_TYPE_USER_MANAGED;
     }
 
     /**
@@ -199,10 +201,10 @@ public class RcUploadMojo extends AbstractStagingMojo {
      */
     private void waitForPublishing(String deploymentId) throws MojoFailureException, IOException {
         getLog().info("Waiting for deployment publishing...");
-        
+
         long startTime = System.currentTimeMillis();
         long maxWaitMillis = maxWaitTimePublishing * 1000L;
-        
+
         while (System.currentTimeMillis() - startTime < maxWaitMillis) {
             Map<String, Object> status = client.getDeploymentStatus(deploymentId);
             String state = String.valueOf(status.get(DeploymentConstants.DEPLOYMENT_STATE));
@@ -225,7 +227,8 @@ public class RcUploadMojo extends AbstractStagingMojo {
             }
         }
 
-        throw new MojoFailureException("Timeout waiting for deployment publishing after " + maxWaitTimePublishing + " seconds");
+        throw new MojoFailureException(
+                "Timeout waiting for deployment publishing after " + maxWaitTimePublishing + " seconds");
     }
 
     /**
@@ -233,7 +236,7 @@ public class RcUploadMojo extends AbstractStagingMojo {
      */
     private String formatDeploymentErrors(Map<String, Object> status) {
         StringBuilder errorMessage = new StringBuilder();
-        
+
         // Add deployment info
         Object deploymentId = status.get(DeploymentConstants.DEPLOYMENT_ID);
         Object deploymentName = status.get("deploymentName");
@@ -243,7 +246,7 @@ public class RcUploadMojo extends AbstractStagingMojo {
         if (deploymentName != null) {
             errorMessage.append("\nDeployment Name: ").append(deploymentName);
         }
-        
+
         // Format errors
         Object errorsObj = status.get(DeploymentConstants.ERRORS);
         if (errorsObj instanceof Map<?, ?> errors) {
@@ -251,7 +254,7 @@ public class RcUploadMojo extends AbstractStagingMojo {
             for (Map.Entry<?, ?> entry : errors.entrySet()) {
                 String component = entry.getKey().toString();
                 Object componentErrors = entry.getValue();
-                
+
                 errorMessage.append("\n  Component: ").append(component);
                 if (componentErrors instanceof java.util.List<?> errorList) {
                     for (Object error : errorList) {
@@ -264,7 +267,7 @@ public class RcUploadMojo extends AbstractStagingMojo {
         } else if (errorsObj != null) {
             errorMessage.append("\nErrors: ").append(errorsObj.toString());
         }
-        
+
         return errorMessage.toString();
     }
 
@@ -276,15 +279,15 @@ public class RcUploadMojo extends AbstractStagingMojo {
         if (errors == null) {
             return true;
         }
-        
+
         if (errors instanceof java.util.List<?> list) {
             return list.isEmpty();
         }
-        
+
         if (errors instanceof Map<?, ?> map) {
             return map.isEmpty();
         }
-        
+
         // If it's a string, check if it's empty or just whitespace
         String errorStr = errors.toString().trim();
         return errorStr.isEmpty() || "{}".equals(errorStr) || "[]".equals(errorStr);

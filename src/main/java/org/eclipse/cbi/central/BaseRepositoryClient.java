@@ -16,7 +16,8 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Base class for repository API clients providing common HTTP client functionality,
+ * Base class for repository API clients providing common HTTP client
+ * functionality,
  * authentication, and error handling.
  */
 public abstract class BaseRepositoryClient {
@@ -31,7 +32,7 @@ public abstract class BaseRepositoryClient {
     protected static final String HEADER_AUTH = "Authorization";
     protected static final String HEADER_ACCEPT = "Accept";
     protected static final String MEDIA_JSON = "application/json";
-    
+
     protected final String baseUrl;
     protected final String username;
     protected final String password;
@@ -42,9 +43,9 @@ public abstract class BaseRepositoryClient {
     /**
      * Creates a new repository client with Basic Authentication.
      * 
-     * @param username Username for basic authentication
-     * @param password Password for basic authentication
-     * @param baseUrl Base URL for the API
+     * @param username       Username for basic authentication
+     * @param password       Password for basic authentication
+     * @param baseUrl        Base URL for the API
      * @param defaultBaseUrl Default base URL if baseUrl is null or empty
      */
     protected BaseRepositoryClient(String username, String password, String baseUrl, String defaultBaseUrl) {
@@ -59,8 +60,8 @@ public abstract class BaseRepositoryClient {
     /**
      * Creates a new repository client with Bearer Token Authentication.
      * 
-     * @param bearerToken Authentication token for API
-     * @param baseUrl Base URL for the API
+     * @param bearerToken    Authentication token for API
+     * @param baseUrl        Base URL for the API
      * @param defaultBaseUrl Default base URL if baseUrl is null or empty
      */
     protected BaseRepositoryClient(String bearerToken, String baseUrl, String defaultBaseUrl) {
@@ -92,7 +93,7 @@ public abstract class BaseRepositoryClient {
         Request.Builder builder = new Request.Builder()
                 .url(url)
                 .addHeader(HEADER_ACCEPT, MEDIA_JSON);
-        
+
         if (this.username != null && this.password != null) {
             // Use Basic Authentication
             String credentials = Credentials.basic(this.username, this.password);
@@ -103,7 +104,7 @@ public abstract class BaseRepositoryClient {
         } else {
             throw new IllegalStateException("No authentication method provided.");
         }
-        
+
         return builder;
     }
 

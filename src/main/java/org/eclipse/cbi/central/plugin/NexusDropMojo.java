@@ -41,22 +41,22 @@ public class NexusDropMojo extends NexusListMojo {
     protected boolean dryRun;
 
     @Override
-    public void execute() throws MojoFailureException  {
+    public void execute() throws MojoFailureException {
         try {
             getLog().info("Starting nexus-drop goal");
-            
+
             // Skip execution root check if no project
             if (project != null && !project.isExecutionRoot()) {
                 getLog().info("Skipping nexus-drop: not execution root");
                 return;
             }
-            
+
             initClient();
 
             // If componentId is provided, drop that directly
-            if(componentId != null && !componentId.isEmpty()) {
+            if (componentId != null && !componentId.isEmpty()) {
                 getLog().info("Dropping component with ID: " + componentId);
-                if(dryRun) {
+                if (dryRun) {
                     getLog().info("Dry run enabled: no components were dropped");
                 } else {
                     logDeleteResponse(client.deleteComponent(componentId));
@@ -65,16 +65,15 @@ public class NexusDropMojo extends NexusListMojo {
             }
 
             // Otherwise, drop based on GAV search, for each target project
-            for(MavenProject targetProject : resolveTargetProjects()) {
+            for (MavenProject targetProject : resolveTargetProjects()) {
                 getLog().info("Processing project: " + targetProject.getId().replace("null", "<empty>"));
-                
+
                 // Perform search
                 Map<String, Object> result = client.searchComponents(
-                    repository, 
-                    targetProject.getGroupId(), 
-                    targetProject.getArtifactId(), 
-                    targetProject.getVersion()
-                );
+                        repository,
+                        targetProject.getGroupId(),
+                        targetProject.getArtifactId(),
+                        targetProject.getVersion());
 
                 // Process and display found artifacts
                 Object itemsObj = result.get("items");
@@ -101,10 +100,10 @@ public class NexusDropMojo extends NexusListMojo {
                         displayArtifact(item);
 
                         getLog().info("Dropping component with ID: " + id);
-                        
-                        if(dryRun) {
+
+                        if (dryRun) {
                             getLog().info("Dry run enabled: no components were dropped");
-                        } else {    
+                        } else {
                             logDeleteResponse(client.deleteComponent(id));
                         }
                     }
@@ -120,7 +119,8 @@ public class NexusDropMojo extends NexusListMojo {
      * Logs the delete response.
      */
     private void logDeleteResponse(Map<String, Object> result) {
-        //TODO - implement detailed logging of delete response once API response structure is known
+        // TODO - implement detailed logging of delete response once API response
+        // structure is known
         // for example is a json response with details returned?
         getLog().info("Delete response: " + result);
     }

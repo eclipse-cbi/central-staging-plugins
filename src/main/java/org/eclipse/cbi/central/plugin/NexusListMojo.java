@@ -25,7 +25,7 @@ import java.util.List;
  */
 @Mojo(name = "nexus-list", defaultPhase = LifecyclePhase.NONE, requiresProject = false)
 public class NexusListMojo extends AbstractNexusMojo {
-    
+
     /**
      * If true, displays detailed information for each artifact.
      */
@@ -33,22 +33,23 @@ public class NexusListMojo extends AbstractNexusMojo {
     protected boolean showDetails;
 
     /**
-     * Executes the nexus-list goal. Searches and lists artifacts from the Nexus repository.
+     * Executes the nexus-list goal. Searches and lists artifacts from the Nexus
+     * repository.
      */
     @Override
     public void execute() throws MojoFailureException {
         try {
             getLog().info("Starting nexus-list goal");
-            
+
             // Skip execution root check if no project
             if (project != null && !project.isExecutionRoot()) {
                 getLog().info("Skipping nexus-list: not execution root");
                 return;
             }
-            
+
             initClient();
 
-            for(MavenProject targetProject : resolveTargetProjects()) {
+            for (MavenProject targetProject : resolveTargetProjects()) {
                 getLog().info("Processing project: " + targetProject.getId().replace("null", "<empty>"));
 
                 // Determine effective search parameters from project if available
@@ -57,17 +58,16 @@ public class NexusListMojo extends AbstractNexusMojo {
 
                 // Log search criteria
                 logSearchCriteria(effectiveGroup, effectiveArtifact);
-                
+
                 // Perform search
                 Map<String, Object> result = client.searchComponents(
-                    repository, 
-                    effectiveGroup, 
-                    effectiveArtifact, 
-                    version
-                );
+                        repository,
+                        effectiveGroup,
+                        effectiveArtifact,
+                        version);
 
                 // Process and display results
-                displaySearchResults(result);   
+                displaySearchResults(result);
             }
         } catch (Exception e) {
             getLog().error("Failed to list Nexus artifacts", e);
@@ -112,7 +112,8 @@ public class NexusListMojo extends AbstractNexusMojo {
             criteria.append(" repository=").append(repository);
         } else {
             criteria.append(" repository=(all)");
-            getLog().warn("No repository specified (nexus.repository). Search will be performed across all repositories which may be slower and less optimal.");
+            getLog().warn(
+                    "No repository specified (nexus.repository). Search will be performed across all repositories which may be slower and less optimal.");
         }
         if (effectiveGroup != null) {
             criteria.append(", group=").append(effectiveGroup);
@@ -135,22 +136,22 @@ public class NexusListMojo extends AbstractNexusMojo {
             getLog().info("No artifacts found.");
             return;
         }
-        
+
         List<?> items = (List<?>) itemsObj;
         if (items.isEmpty()) {
             getLog().info("No artifacts found.");
             return;
         }
-        
+
         getLog().info("Found " + items.size() + " artifact(s):");
         getLog().info("─────────────────────────────────────────────────────────────");
-        
+
         for (Object itemObj : items) {
             if (itemObj instanceof Map) {
                 displayArtifact((Map<?, ?>) itemObj);
             }
         }
-        
+
         // Display continuation token if available
         Object continuationTokenObj = result.get("continuationToken");
         if (continuationTokenObj != null) {
@@ -169,7 +170,7 @@ public class NexusListMojo extends AbstractNexusMojo {
         Object groupObj = item.get("group");
         Object name = item.get("name");
         Object versionObj = item.get("version");
-        
+
         // Build artifact display string
         StringBuilder display = new StringBuilder();
         if (groupObj != null) {
@@ -185,9 +186,9 @@ public class NexusListMojo extends AbstractNexusMojo {
         if (id != null) {
             display.append(" (id=").append(id).append(")");
         }
-        
+
         getLog().info("• " + display.toString());
-        
+
         if (showDetails) {
             if (repositoryObj != null) {
                 getLog().info("  Repository: " + repositoryObj);
@@ -198,7 +199,7 @@ public class NexusListMojo extends AbstractNexusMojo {
             if (id != null) {
                 getLog().info("  Component ID: " + id);
             }
-            
+
             // Display assets if available
             Object assetsObj = item.get("assets");
             if (assetsObj instanceof List<?> assets && !assets.isEmpty()) {
@@ -220,7 +221,7 @@ public class NexusListMojo extends AbstractNexusMojo {
         Object path = asset.get("path");
         Object downloadUrl = asset.get("downloadUrl");
         Object contentType = asset.get("contentType");
-        
+
         if (path != null) {
             getLog().info("    - " + path);
             if (downloadUrl != null) {

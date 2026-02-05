@@ -379,12 +379,12 @@ public class RcDownloadMojo extends AbstractStagingMojo {
     /**
      * Downloads artifacts based on packaging type using Maven Artifact Resolver.
      * 
-     * @param remoteRepo       The remote repository
-     * @param groupId          The group ID
-     * @param artifactId       The artifact ID
-     * @param version          The version
-     * @param packaging        The packaging type
-     * @param targetDir        The target directory
+     * @param remoteRepo The remote repository
+     * @param groupId    The group ID
+     * @param artifactId The artifact ID
+     * @param version    The version
+     * @param packaging  The packaging type
+     * @param targetDir  The target directory
      * @throws MojoFailureException if a mandatory artifact fails to download
      */
     private void downloadArtifactsByPackaging(RemoteRepository remoteRepo, String groupId, String artifactId,
@@ -392,7 +392,6 @@ public class RcDownloadMojo extends AbstractStagingMojo {
 
         downloadArtifactAndSidecars(new ArtifactDownloadContext(
                 remoteRepo, groupId, artifactId, version, "pom", null, targetDir, true));
-
 
         // Download main artifact based on packaging
         if (ECLIPSE_REPOSITORY_PACKAGING.equals(packaging)) {
@@ -498,7 +497,7 @@ public class RcDownloadMojo extends AbstractStagingMojo {
         if (!failedMandatoryDownloads.isEmpty()) {
             StringBuilder errorMessage = new StringBuilder();
             errorMessage.append("Failed to download ").append(failedMandatoryDownloads.size())
-                        .append(" mandatory artifact(s):\n");
+                    .append(" mandatory artifact(s):\n");
             for (String coords : failedMandatoryDownloads) {
                 errorMessage.append("  - ").append(coords).append("\n");
             }

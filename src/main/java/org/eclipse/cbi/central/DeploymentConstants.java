@@ -84,12 +84,14 @@ public final class DeploymentConstants {
 
     // Publishing types
     /**
-     * Publishing type: Deployment stops in VALIDATED state and requires manual approval.
+     * Publishing type: Deployment stops in VALIDATED state and requires manual
+     * approval.
      */
     public static final String PUBLISHING_TYPE_USER_MANAGED = "USER_MANAGED";
 
     /**
-     * Publishing type: Deployment automatically progresses to PUBLISHING when validation passes.
+     * Publishing type: Deployment automatically progresses to PUBLISHING when
+     * validation passes.
      */
     public static final String PUBLISHING_TYPE_AUTOMATIC = "AUTOMATIC";
 

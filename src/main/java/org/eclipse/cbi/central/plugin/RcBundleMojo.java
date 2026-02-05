@@ -229,7 +229,8 @@ public class RcBundleMojo extends AbstractStagingMojo {
                         checksumInfo.append("\n    ").append(checksumType.label).append(": ").append(checksum);
                         hasChecksums = true;
                     } catch (IOException e) {
-                        throw new MojoFailureException("Failed to read " + checksumType.label + " checksum for " + artifactName, e);
+                        throw new MojoFailureException(
+                                "Failed to read " + checksumType.label + " checksum for " + artifactName, e);
                     }
                 }
             }
@@ -333,7 +334,7 @@ public class RcBundleMojo extends AbstractStagingMojo {
                 // Generate checksums for all enabled types
                 for (ChecksumType checksumType : checksumTypes) {
                     if (checksumType.enabled) {
-                        generateChecksumForArtifact(artifactDir, artifactFile, artifactName, 
+                        generateChecksumForArtifact(artifactDir, artifactFile, artifactName,
                                 checksumType.label, checksumType.extension, forceRegenerate);
                     }
                 }
@@ -487,7 +488,7 @@ public class RcBundleMojo extends AbstractStagingMojo {
                 File ascFile = new File(artifactDir, artifactName + ASC_EXTENSION);
                 if (artifactFile.exists() && (forceResign || !ascFile.exists())) {
                     signSingleArtifact(artifactFile, ascFile, artifactName);
-                }else {
+                } else {
                     getLog().info("Signature already present for: " + artifactName);
                 }
             }
@@ -911,7 +912,6 @@ public class RcBundleMojo extends AbstractStagingMojo {
         getLog().info("Bundle ZIP created from staging: " + outZip.getAbsolutePath());
         return outZip;
     }
-
 
     // ================================================================================================
     // DRY-RUN LOGGING METHODS

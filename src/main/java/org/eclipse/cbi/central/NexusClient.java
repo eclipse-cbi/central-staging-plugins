@@ -17,16 +17,20 @@ import java.util.Map;
 /**
  * Nexus Repository Manager REST API Client.
  * 
- * This client provides a Java interface to the Nexus Repository Manager REST API v1
+ * This client provides a Java interface to the Nexus Repository Manager REST
+ * API v1
  * available at https://repo3.eclipse.org/service/rest/v1.
  * 
- * The Nexus Repository Manager API provides comprehensive repository management capabilities:
+ * The Nexus Repository Manager API provides comprehensive repository management
+ * capabilities:
  * 1. Repository browsing and searching
  * 2. Component and asset management
  * 3. Security and access control
  * 4. Staging and promotion workflows
  * 
- * @see <a href="https://help.sonatype.com/repomanager3/rest-and-integration-api">Nexus Repository Manager REST API Documentation</a>
+ * @see <a href=
+ *      "https://help.sonatype.com/repomanager3/rest-and-integration-api">Nexus
+ *      Repository Manager REST API Documentation</a>
  */
 public class NexusClient extends BaseRepositoryClient {
     // Context strings for error descriptions
@@ -54,7 +58,8 @@ public class NexusClient extends BaseRepositoryClient {
      * 
      * @param username Username for basic authentication
      * @param password Password for basic authentication
-     * @param baseUrl Custom API base URL (defaults to https://repo3.eclipse.org/service/rest/v1)
+     * @param baseUrl  Custom API base URL (defaults to
+     *                 https://repo3.eclipse.org/service/rest/v1)
      */
     public NexusClient(String username, String password, String baseUrl) {
         super(username, password, baseUrl, DEFAULT_BASE_URL);
@@ -87,7 +92,8 @@ public class NexusClient extends BaseRepositoryClient {
      * @return Search results as a Map
      * @throws IOException if the request fails
      */
-    public Map<String, Object> searchComponents(String repository, String group, String name, String version) throws IOException {
+    public Map<String, Object> searchComponents(String repository, String group, String name, String version)
+            throws IOException {
         StringBuilder urlBuilder = new StringBuilder(baseUrl + "/search");
         urlBuilder.append("?");
         if (repository != null && !repository.isEmpty()) {
@@ -103,7 +109,7 @@ public class NexusClient extends BaseRepositoryClient {
             urlBuilder.append("version=").append(version).append("&");
         }
         String url = urlBuilder.toString();
-        
+
         Request request = baseRequest(url).get().build();
         try (Response response = client.newCall(request).execute()) {
             return handleResponse(response, Map.of(
@@ -169,23 +175,23 @@ public class NexusClient extends BaseRepositoryClient {
      * 
      * API Endpoint: POST /components
      * 
-     * @param repository   The target repository name
+     * @param repository    The target repository name
      * @param componentFile The path to the file to upload
-     * @param group        The group/namespace (e.g., "org.eclipse.example")
-     * @param artifactId   The artifact ID
-     * @param version      The version
-     * @param packaging    The packaging type (e.g., "jar", "pom")
+     * @param group         The group/namespace (e.g., "org.eclipse.example")
+     * @param artifactId    The artifact ID
+     * @param version       The version
+     * @param packaging     The packaging type (e.g., "jar", "pom")
      * @return Upload result as a Map
      * @throws IOException if the upload fails or API returns an error
      */
-    public Map<String, Object> uploadComponent(String repository, java.nio.file.Path componentFile, 
-                                                String group, String artifactId, String version, String packaging) throws IOException {
+    public Map<String, Object> uploadComponent(String repository, java.nio.file.Path componentFile,
+            String group, String artifactId, String version, String packaging) throws IOException {
         String url = baseUrl + "/components?repository=" + repository;
-        
+
         // Create multipart form data for file upload
-        RequestBody fileBody = RequestBody.create(componentFile.toFile(), 
-            MediaType.parse("application/octet-stream"));
-        
+        RequestBody fileBody = RequestBody.create(componentFile.toFile(),
+                MediaType.parse("application/octet-stream"));
+
         MultipartBody.Builder formBuilder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("maven2.groupId", group)
@@ -205,7 +211,7 @@ public class NexusClient extends BaseRepositoryClient {
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             String body = response.body() != null ? response.body().string() : "";
-            
+
             if (code == 204) {
                 return Map.of("success", true, "message", "Component uploaded successfully.");
             } else if (code == 400) {

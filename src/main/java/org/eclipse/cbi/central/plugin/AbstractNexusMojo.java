@@ -30,7 +30,7 @@ import java.util.List;
  * Handles common configuration and client initialization.
  */
 public abstract class AbstractNexusMojo extends AbstractMojo {
-    
+
     /**
      * The username used for authentication with the Nexus Repository Manager API.
      */
@@ -56,7 +56,8 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
     protected String nexusApiUrl;
 
     /**
-     * The Nexus repository to search in. If not set, searches across all repositories.
+     * The Nexus repository to search in. If not set, searches across all
+     * repositories.
      */
     @Parameter(property = "nexus.repository")
     protected String repository;
@@ -83,7 +84,7 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
      */
     @Parameter(property = "nexus.version")
     protected String version;
-    
+
     /**
      * The Maven settings instance, used to retrieve server credentials.
      */
@@ -122,13 +123,12 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
      */
     protected List<MavenProject> resolveTargetProjects() {
         return ProjectResolver.resolveTargetProjects(
-            this.group, 
-            this.artifact, 
-            this.version, 
-            this.project, 
-            this.reactorProjects, 
-            getLog()
-        );
+                this.group,
+                this.artifact,
+                this.version,
+                this.project,
+                this.reactorProjects,
+                getLog());
     }
 
     /**
@@ -142,7 +142,7 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
         if (username != null && !username.isEmpty()) {
             return username;
         }
-        
+
         // Try to get username from settings.xml
         if (settings != null && serverId != null) {
             Server server = settings.getServer(serverId);
@@ -150,10 +150,10 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
                 return server.getUsername();
             }
         }
-        
+
         throw new MojoFailureException(
-            "No username found. Provide -Dnexus.username=<username> or configure server '" 
-            + serverId + "' in settings.xml");
+                "No username found. Provide -Dnexus.username=<username> or configure server '"
+                        + serverId + "' in settings.xml");
     }
 
     /**
@@ -167,7 +167,7 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
         if (password != null && !password.isEmpty()) {
             return password;
         }
-        
+
         // Try to get password from settings.xml
         if (settings != null && serverId != null) {
             Server server = settings.getServer(serverId);
@@ -175,10 +175,10 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
                 return decryptPassword(server);
             }
         }
-        
+
         throw new MojoFailureException(
-            "No password found. Provide -Dnexus.password=<password> or configure server '" 
-            + serverId + "' in settings.xml");
+                "No password found. Provide -Dnexus.password=<password> or configure server '"
+                        + serverId + "' in settings.xml");
     }
 
     /**
