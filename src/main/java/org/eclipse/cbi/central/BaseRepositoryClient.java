@@ -97,7 +97,7 @@ public abstract class BaseRepositoryClient {
             // Use Basic Authentication
             String credentials = Credentials.basic(this.username, this.password);
             builder.addHeader(HEADER_AUTH, credentials);
-        } else if (bearerToken != null) {
+        } else if (this.bearerToken != null) {
             // Use Bearer Token Authentication
             builder.addHeader(HEADER_AUTH, "Bearer " + this.bearerToken);
         } else {
