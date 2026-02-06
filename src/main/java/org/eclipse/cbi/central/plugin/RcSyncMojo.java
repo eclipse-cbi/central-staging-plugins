@@ -210,6 +210,8 @@ public class RcSyncMojo extends AbstractStagingMojo {
         if (this.project != null) {
             bundleMojo.project = this.project;
         }
+
+        bundleMojo.settingsDecrypter = this.settingsDecrypter;
     }
 
     // ================================================================================================
@@ -292,6 +294,8 @@ public class RcSyncMojo extends AbstractStagingMojo {
         uploadMojo.maxWaitTimePublishing = this.maxWaitTimePublishing;
         uploadMojo.pollInterval = this.pollInterval;
         uploadMojo.waitForCompletion = this.waitForCompletion;
+
+        uploadMojo.settingsDecrypter = this.settingsDecrypter;
 
         try {
             uploadMojo.execute();

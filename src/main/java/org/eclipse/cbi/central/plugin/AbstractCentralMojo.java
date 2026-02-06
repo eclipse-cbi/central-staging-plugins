@@ -171,9 +171,12 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
      */
     private Server decryptServer(Server server) {
         if (this.settingsDecrypter != null) {
+            getLog().info("Decrypting server credentials for server id: " + this.serverId);
             SettingsDecryptionRequest request = new DefaultSettingsDecryptionRequest(server);
             SettingsDecryptionResult result = this.settingsDecrypter.decrypt(request);
             return result.getServer();
+        } else {
+            getLog().info("SettingsDecrypter is not available; returning server without decryption.");
         }
         return server;
     }
