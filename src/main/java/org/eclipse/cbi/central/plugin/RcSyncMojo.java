@@ -322,10 +322,12 @@ public class RcSyncMojo extends AbstractStagingMojo {
         boolean allOk = true;
 
         RcPublishMojo publishMojo = new RcPublishMojo();
+        publishMojo.project = this.project;
         publishMojo.settings = this.settings;
         publishMojo.serverId = this.serverId;
         publishMojo.centralApiUrl = this.centralApiUrl;
         publishMojo.bearerCreate = this.bearerCreate;
+        publishMojo.settingsDecrypter = this.settingsDecrypter;
         try {
             publishMojo.execute();
             getLog().info("Publication OK for module " + String.join(":", gav));
@@ -352,6 +354,8 @@ public class RcSyncMojo extends AbstractStagingMojo {
         dropMojo.removeAll = this.removeAll;
         dropMojo.removeFailedOnly = this.removeFailedOnly;
         dropMojo.dryRun = this.dryRun;
+        dropMojo.bearerCreate = this.bearerCreate;
+        dropMojo.settingsDecrypter = this.settingsDecrypter;
         try {
             dropMojo.execute();
             getLog().info("Cleanup via RcDropMojo completed.");
