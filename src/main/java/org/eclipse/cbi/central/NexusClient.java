@@ -19,7 +19,7 @@ import java.util.Map;
  * 
  * This client provides a Java interface to the Nexus Repository Manager REST
  * API v1
- * available at https://repo3.eclipse.org/service/rest/v1.
+ * available at https://repo.eclipse.org/service/rest/v1.
  * 
  * The Nexus Repository Manager API provides comprehensive repository management
  * capabilities:
@@ -41,7 +41,7 @@ public class NexusClient extends BaseRepositoryClient {
     private static final String CTX_UPLOAD_COMPONENT = "Upload component";
     private static final String CTX_LIST_REPOSITORIES = "List repositories";
 
-    private static final String DEFAULT_BASE_URL = "https://repo3.eclipse.org/service/rest/v1";
+    private static final String DEFAULT_BASE_URL = "https://repo.eclipse.org/service/rest/v1";
 
     /**
      * Creates a new Nexus Repository Manager API client with default base URL.
@@ -59,7 +59,7 @@ public class NexusClient extends BaseRepositoryClient {
      * @param username Username for basic authentication
      * @param password Password for basic authentication
      * @param baseUrl  Custom API base URL (defaults to
-     *                 https://repo3.eclipse.org/service/rest/v1)
+     *                 https://repo.eclipse.org/service/rest/v1)
      */
     public NexusClient(String username, String password, String baseUrl) {
         super(username, password, baseUrl, DEFAULT_BASE_URL);

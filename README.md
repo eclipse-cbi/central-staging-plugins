@@ -455,7 +455,7 @@ mvn central-staging-plugins:rc-upload -Dcentral.syncBundleFile=/path/to/bundle.z
 **Step 1: Download artifacts from remote repository**
 ```bash
 mvn central-staging-plugins:rc-download \
-  -Dcentral.repositoryUrl="https://repo3.eclipse.org/repository/cbi-maven2-staging" \
+  -Dcentral.repositoryUrl="https://repo.eclipse.org/repository/cbi-maven2-staging" \
   -Dcentral.namespace=org.eclipse.cbi.tycho.example \
   -Dcentral.name=org.eclipse.cbi.tycho.example.plugin \
   -Dcentral.version=1.0.4
@@ -865,7 +865,7 @@ The staging directory structure is controlled by two parameters:
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nexus.serverId` | String | `nexus` | Maven settings.xml server ID for authentication |
-| `nexus.apiUrl` | String | `https://repo3.eclipse.org/service/rest/v1` | Nexus Repository Manager API endpoint URL |
+| `nexus.apiUrl` | String | `https://repo.eclipse.org/service/rest/v1` | Nexus Repository Manager API endpoint URL |
 | `nexus.username` | String | - | The username used for authentication with the Nexus Repository Manager API. If unset, username is obtained from settings.xml |
 | `nexus.password` | String | - | The password used for authentication with the Nexus Repository Manager API. If unset, password is obtained from settings.xml |
 | `nexus.repository` | String | - | The Nexus repository to search in. If not set, searches across all repositories (slower) |
@@ -1224,8 +1224,8 @@ jobs:
         run: |
           mvn clean deploy -Pcentral-release -DskipTests -Dcentral.bearerCreate=true --settings settings.xml
         env:
-          REPO3_TOKEN_USERNAME: ${{ secrets.REPO3_TOKEN_USERNAME }}
-          REPO3_TOKEN_PASSWORD: ${{ secrets.REPO3_TOKEN_PASSWORD }}
+          REPO_TOKEN_USERNAME: ${{ secrets.REPO_TOKEN_USERNAME }}
+          REPO_TOKEN_PASSWORD: ${{ secrets.REPO_TOKEN_PASSWORD }}
           CENTRAL_SONATYPE_TOKEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
           CENTRAL_SONATYPE_TOKEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
