@@ -89,6 +89,24 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
     protected MavenProject project;
 
     /**
+     * HTTP connection timeout in seconds.
+     */
+    @Parameter(property = "central.connectTimeout", defaultValue = "30")
+    protected int connectTimeout;
+
+    /**
+     * HTTP read timeout in seconds (for receiving responses).
+     */
+    @Parameter(property = "central.readTimeout", defaultValue = "300")
+    protected int readTimeout;
+
+    /**
+     * HTTP write timeout in seconds (for sending requests).
+     */
+    @Parameter(property = "central.writeTimeout", defaultValue = "300")
+    protected int writeTimeout;
+
+    /**
      * The CentralPortalClient instance used for API interactions.
      */
     protected CentralPortalClient client;
@@ -186,8 +204,8 @@ public abstract class AbstractCentralMojo extends AbstractMojo {
      * URL.
      */
     protected void initClient() {
-        client = centralApiUrl != null && centralApiUrl.isEmpty()
-                ? new CentralPortalClient(getBearerToken(), centralApiUrl)
-                : new CentralPortalClient(getBearerToken());
+        client = centralApiUrl != null && !centralApiUrl.isEmpty()
+                ? new CentralPortalClient(getBearerToken(), centralApiUrl, connectTimeout, readTimeout, writeTimeout)
+                : new CentralPortalClient(getBearerToken(), null, connectTimeout, readTimeout, writeTimeout);
     }
 }

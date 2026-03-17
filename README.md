@@ -778,6 +778,9 @@ This section provides a comprehensive reference for all plugin parameters, organ
 | `central.namespace` | String | `${project.groupId}` | Target namespace (groupId) for publication |
 | `central.name` | String | `${project.artifactId}` | Artifact name identifier |
 | `central.version` | String | `${project.version}` | Artifact version |
+| `central.connectTimeout` | int | `30` | HTTP connection timeout in seconds |
+| `central.readTimeout` | int | `300` | HTTP read timeout in seconds (for receiving responses) |
+| `central.writeTimeout` | int | `300` | HTTP write timeout in seconds (for sending requests, e.g., large file uploads) |
 
 ### Repository Configuration Parameters
 
@@ -1317,6 +1320,40 @@ echo "your-username:your-password" | base64
    unzip -l target/central-staging/bundle.zip
    ```
 2. Verify all required files are present (JAR, POM, sources, javadoc, signatures, checksums)
+
+**Problem**: Bundle upload fails with timeout errors (`java.net.SocketTimeoutException: timeout`)
+
+**Solutions**:
+1. Increase HTTP timeouts for large bundles (default is 5 minutes):
+   ```bash
+   # Example: 10 minutes timeout
+   mvn central-staging-plugins:rc-upload \
+     -Dcentral.readTimeout=600 \
+     -Dcentral.writeTimeout=600
+   ```
+2. For very large files (20+ minutes):
+   ```bash
+   mvn central-staging-plugins:rc-sync \
+     -Dcentral.readTimeout=1200 \
+     -Dcentral.writeTimeout=1200
+   ```
+3. Configure in your `pom.xml`:
+   ```xml
+   <plugin>
+     <groupId>org.eclipse.cbi.central</groupId>
+     <artifactId>central-staging-plugins</artifactId>
+     <configuration>
+       <connectTimeout>60</connectTimeout>
+       <readTimeout>600</readTimeout>
+       <writeTimeout>600</writeTimeout>
+     </configuration>
+   </plugin>
+   ```
+
+**Available timeout parameters**:
+- `central.connectTimeout` - Connection establishment timeout (default: 30 seconds)
+- `central.readTimeout` - Response read timeout (default: 300 seconds / 5 minutes)
+- `central.writeTimeout` - Request write timeout (default: 300 seconds / 5 minutes)
 
 
 ### Debug Mode

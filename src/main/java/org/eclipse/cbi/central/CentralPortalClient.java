@@ -65,6 +65,20 @@ public class CentralPortalClient extends BaseRepositoryClient {
     }
 
     /**
+     * Creates a new Central Portal API client with custom base URL and timeouts.
+     * 
+     * @param bearerToken    Authentication token for Central Publisher API
+     * @param baseUrl        Custom API base URL (defaults to
+     *                       https://central.sonatype.com/api/v1/publisher)
+     * @param connectTimeout Connection timeout in seconds
+     * @param readTimeout    Read timeout in seconds
+     * @param writeTimeout   Write timeout in seconds
+     */
+    public CentralPortalClient(String bearerToken, String baseUrl, int connectTimeout, int readTimeout, int writeTimeout) {
+        super(bearerToken, baseUrl, DEFAULT_BASE_URL, connectTimeout, readTimeout, writeTimeout);
+    }
+
+    /**
      * Checks if a component is published in Central for the given namespace, name,
      * and version.
      *

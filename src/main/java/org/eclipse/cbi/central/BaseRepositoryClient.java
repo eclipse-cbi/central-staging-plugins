@@ -40,6 +40,11 @@ public abstract class BaseRepositoryClient {
     protected final OkHttpClient client;
     protected final ObjectMapper objectMapper;
 
+    // Default timeouts (in seconds)
+    private static final int DEFAULT_CONNECT_TIMEOUT = 30;
+    private static final int DEFAULT_READ_TIMEOUT = 300; // 5 minutes for large file uploads
+    private static final int DEFAULT_WRITE_TIMEOUT = 300; // 5 minutes for large file uploads
+
     /**
      * Creates a new repository client with Basic Authentication.
      * 
@@ -49,11 +54,31 @@ public abstract class BaseRepositoryClient {
      * @param defaultBaseUrl Default base URL if baseUrl is null or empty
      */
     protected BaseRepositoryClient(String username, String password, String baseUrl, String defaultBaseUrl) {
+        this(username, password, baseUrl, defaultBaseUrl, DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT, DEFAULT_WRITE_TIMEOUT);
+    }
+
+    /**
+     * Creates a new repository client with Basic Authentication and custom timeouts.
+     * 
+     * @param username       Username for basic authentication
+     * @param password       Password for basic authentication
+     * @param baseUrl        Base URL for the API
+     * @param defaultBaseUrl Default base URL if baseUrl is null or empty
+     * @param connectTimeout Connection timeout in seconds
+     * @param readTimeout    Read timeout in seconds
+     * @param writeTimeout   Write timeout in seconds
+     */
+    protected BaseRepositoryClient(String username, String password, String baseUrl, String defaultBaseUrl,
+            int connectTimeout, int readTimeout, int writeTimeout) {
         this.username = username;
         this.password = password;
         this.bearerToken = null;
         this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : defaultBaseUrl;
-        this.client = new OkHttpClient();
+        this.client = new OkHttpClient.Builder()
+                .connectTimeout(connectTimeout, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(readTimeout, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(writeTimeout, java.util.concurrent.TimeUnit.SECONDS)
+                .build();
         this.objectMapper = new ObjectMapper();
     }
 
@@ -65,11 +90,30 @@ public abstract class BaseRepositoryClient {
      * @param defaultBaseUrl Default base URL if baseUrl is null or empty
      */
     protected BaseRepositoryClient(String bearerToken, String baseUrl, String defaultBaseUrl) {
+        this(bearerToken, baseUrl, defaultBaseUrl, DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT, DEFAULT_WRITE_TIMEOUT);
+    }
+
+    /**
+     * Creates a new repository client with Bearer Token Authentication and custom timeouts.
+     * 
+     * @param bearerToken    Authentication token for API
+     * @param baseUrl        Base URL for the API
+     * @param defaultBaseUrl Default base URL if baseUrl is null or empty
+     * @param connectTimeout Connection timeout in seconds
+     * @param readTimeout    Read timeout in seconds
+     * @param writeTimeout   Write timeout in seconds
+     */
+    protected BaseRepositoryClient(String bearerToken, String baseUrl, String defaultBaseUrl,
+            int connectTimeout, int readTimeout, int writeTimeout) {
         this.bearerToken = bearerToken;
         this.username = null;
         this.password = null;
         this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : defaultBaseUrl;
-        this.client = new OkHttpClient();
+        this.client = new OkHttpClient.Builder()
+                .connectTimeout(connectTimeout, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(readTimeout, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(writeTimeout, java.util.concurrent.TimeUnit.SECONDS)
+                .build();
         this.objectMapper = new ObjectMapper();
     }
 
