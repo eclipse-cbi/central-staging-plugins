@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@Mojo(name = "rc-upload", defaultPhase = LifecyclePhase.NONE)
+@Mojo(name = "rc-upload", defaultPhase = LifecyclePhase.NONE, requiresProject = false)
 public class RcUploadMojo extends AbstractStagingMojo {
 
     @Override
