@@ -815,6 +815,8 @@ mvn central-staging-plugins:rc-sync \
 | `central.automaticPublishing` | Boolean | `false` | Enable automatic publishing after upload |
 | `central.syncAutoPublish` | Boolean | `false` | Auto-publish after successful upload (rc-sync) |
 | `central.syncDropAfterPublish` | Boolean | `true` | Cleanup staging after successful publish (rc-sync) |
+| `central.showAllDeployments` | Boolean | `false` | Lists all deployments available (goal: rc-list) |
+| `central.showArtifacts` | Boolean | `true` | If true (or not set as default), shows all info including artifacts. If false, shows only deployment's details without artifacts. (goal: rc-list) |
 
 ### Artifact Processing Parameters
 
