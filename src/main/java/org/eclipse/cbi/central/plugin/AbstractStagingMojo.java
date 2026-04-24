@@ -262,6 +262,16 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
     @Parameter(property = "central.downloadChecksums512", defaultValue = "false")
     protected boolean downloadChecksums512;
 
+    /**
+     * Comma-separated list of additional classifier.extension combinations to download.
+     * Each entry can be:
+     * - An extension only: "sig" will download artifactId-version.sig
+     * - A classifier.extension: "audit-cdi.xml" will download artifactId-version-audit-cdi.xml
+     * Example: "sig,audit-cdi.xml,coverage-cdi.html,suite.xml,sigtest-jdk17.sig"
+     */
+    @Parameter(property = "central.downloadAdditionalClassifiers")
+    protected String downloadAdditionalClassifiers;
+
     // Failure Handling Configuration
     /**
      * If true, fail the build when sources or javadoc artifacts cannot be

@@ -481,9 +481,17 @@ mvn central-staging-plugins:rc-upload \
 
 ### rc-download
 
-Download artifacts from remote repositories to local staging:
+Download artifacts from remote repositories to local staging.
+
+**Note:** This goal can run with or without a Maven project. When running without a project, you must provide all GAV coordinates and the repository URL.
+
 ```bash
+# With a Maven project
 mvn central-staging-plugins:rc-download \
+  -Dcentral.repositoryUrl=https://repo.example.com/releases
+
+# Without a Maven project (standalone)
+mvn org.eclipse.cbi.central:central-staging-plugins:VERSION:rc-download \
   -Dcentral.repositoryUrl=https://repo.example.com/releases \
   -Dcentral.namespace=org.example \
   -Dcentral.name=my-artifact \
@@ -494,24 +502,50 @@ mvn central-staging-plugins:rc-download \
 
 - Downloads JAR, POM, sources, and javadoc artifacts
 - Retrieves signatures (.asc files) and checksums
-- **Important**: Uses local POM instead of remote POM for Maven projects
+- **Can run without a Maven project** (standalone mode)
+- **Important**: Uses local POM instead of remote POM when in a Maven project
 
 **rc-download Parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `central.repositoryUrl` | String | - | Source remote repository URL for downloads |
+| `central.repositoryUrl` | String | - | **Required** Source remote repository URL for downloads |
+| `central.namespace` | String | - | **Required when no project** Group ID of artifacts to download |
+| `central.name` | String | - | **Required when no project** Artifact ID to download |
+| `central.version` | String | - | **Required when no project** Version to download |
 | `central.repositoryLayout` | String | `default` | Repository layout type (default/legacy/p2) |
 | `central.serverSyncId` | String | `central.sync` | Server ID for repository authentication |
 | `central.downloadSignatures` | Boolean | `true` | Download .asc signature files |
 | `central.downloadChecksums` | Boolean | `true` | Download checksum files |
 | `central.downloadChecksums256` | Boolean | `false` | Download SHA256 checksum files |
 | `central.downloadChecksums512` | Boolean | `false` | Download SHA512 checksum files |
+| `central.downloadAdditionalClassifiers` | String | - | Download additional artifacts with custom classifier.extension or extension only. Comma-separated list. Example: `sig,audit-cdi.xml,suite.xml` |
 | `central.syncStagingDir` | File | `${project.build.directory}` | Base staging directory for artifacts |
 | `central.syncStagingDirName` | String | `sync-staging` | Name of the staging subdirectory within the build directory |
 | `central.p2Metadata` | Boolean | `false` | Process P2 repository metadata files (artifacts.xml, content.xml) |
 
 *See also: [Core Configuration Parameters](#core-configuration-parameters), [Execution Control Parameters](#execution-control-parameters)*
+
+**Examples:**
+
+Download artifacts standalone (without a Maven project):
+```bash
+mvn org.eclipse.cbi.central:central-staging-plugins:1.4.5-SNAPSHOT:rc-download \
+  -Dcentral.repositoryUrl=https://repo.example.com/releases \
+  -Dcentral.namespace=org.example \
+  -Dcentral.name=my-artifact \
+  -Dcentral.version=1.0.0
+```
+
+Download with additional custom artifacts:
+```bash
+mvn central-staging-plugins:rc-download \
+  -Dcentral.repositoryUrl=https://repo.example.com/releases \
+  -Dcentral.namespace=jakarta.cdi \
+  -Dcentral.name=jakarta.cdi-tck-core-impl \
+  -Dcentral.version=5.0.0.Alpha2 \
+  -Dcentral.downloadAdditionalClassifiers="audit-cdi.xml,coverage-cdi.html,suite.xml,sigtest-jdk17.sig"
+```
 
 ### rc-bundle
 
@@ -832,6 +866,7 @@ mvn central-staging-plugins:rc-sync \
 | `central.downloadChecksums` | Boolean | `true` | Download checksum files |
 | `central.downloadChecksums256` | Boolean | `false` | Download SHA256 checksum files |
 | `central.downloadChecksums512` | Boolean | `false` | Download SHA512 checksum files |
+| `central.downloadAdditionalClassifiers` | String | - | Download additional artifacts with custom classifier.extension or extension only. Comma-separated list. Example: `sig,audit-cdi.xml,coverage-cdi.html,suite.xml,sigtest-jdk17.sig` |
 | `central.p2Metadata` | Boolean | `false` | Process P2 repository metadata files (artifacts.xml, content.xml) |
 | `central.zipArtifacts` | Boolean | `true` | Create ZIP bundle from processed artifacts |
 

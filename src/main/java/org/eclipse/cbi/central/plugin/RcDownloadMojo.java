@@ -39,7 +39,7 @@ import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 
-@Mojo(name = "rc-download", defaultPhase = LifecyclePhase.NONE, requiresProject = true)
+@Mojo(name = "rc-download", defaultPhase = LifecyclePhase.NONE, requiresProject = false)
 public class RcDownloadMojo extends AbstractStagingMojo {
 
     /** Default repository layout */
@@ -88,13 +88,30 @@ public class RcDownloadMojo extends AbstractStagingMojo {
             return;
         }
 
-        // Display Maven execution context information
-        logMavenExecutionContext();
-
         // Check if we have explicit GAV parameters
         boolean hasExplicitGav = this.namespace != null && !this.namespace.isBlank()
                 && this.name != null && !this.name.isBlank()
                 && this.version != null && !this.version.isBlank();
+
+        // Validate required parameters when executing without a project
+        if (this.project == null && !hasExplicitGav) {
+            throw new MojoFailureException(
+                    "No Maven project found and no explicit GAV coordinates provided. " +
+                            "When running without a project, you must provide:\n" +
+                            "  -Dcentral.namespace=<groupId>\n" +
+                            "  -Dcentral.name=<artifactId>\n" +
+                            "  -Dcentral.version=<version>\n" +
+                            "  -Dcentral.repositoryUrl=<url>");
+        }
+
+        // Validate repository URL is provided
+        if (this.repositoryUrl == null || this.repositoryUrl.isBlank()) {
+            throw new MojoFailureException(
+                    "Repository URL is required. Please provide -Dcentral.repositoryUrl=<url>");
+        }
+
+        // Display Maven execution context information
+        logMavenExecutionContext();
 
         // Only check execution root if we don't have explicit GAV
         if (!hasExplicitGav && this.project != null && !this.project.isExecutionRoot()) {
@@ -421,6 +438,9 @@ public class RcDownloadMojo extends AbstractStagingMojo {
                     remoteRepo, groupId, artifactId, version, "xml", "p2metadata", targetDir, false));
         }
 
+        // Download additional classifiers if configured
+        downloadAdditionalClassifiers(remoteRepo, groupId, artifactId, version, targetDir);
+
         // Validate that all mandatory artifacts were downloaded successfully
         validateMandatoryDownloads();
     }
@@ -489,6 +509,59 @@ public class RcDownloadMojo extends AbstractStagingMojo {
     }
 
     /**
+     * Downloads additional artifacts with custom classifier and extension combinations.
+     * 
+     * @param remoteRepo The remote repository
+     * @param groupId    The group ID
+     * @param artifactId The artifact ID
+     * @param version    The version
+     * @param targetDir  The target directory
+     */
+    private void downloadAdditionalClassifiers(RemoteRepository remoteRepo, String groupId, String artifactId,
+            String version, File targetDir) {
+        if (this.downloadAdditionalClassifiers == null || this.downloadAdditionalClassifiers.trim().isEmpty()) {
+            return;
+        }
+
+        getLog().info("Downloading additional classifiers: " + this.downloadAdditionalClassifiers);
+
+        String[] classifierExtensions = this.downloadAdditionalClassifiers.split(",");
+        for (String classifierExt : classifierExtensions) {
+            classifierExt = classifierExt.trim();
+            if (classifierExt.isEmpty()) {
+                continue;
+            }
+
+            // Parse entry: can be "extension" or "classifier.extension"
+            // Examples: "sig" -> extension="sig", classifier=null
+            //           "audit-cdi.xml" -> extension="xml", classifier="audit-cdi"
+            int lastDotIndex = classifierExt.lastIndexOf('.');
+            String classifier = null;
+            String extension;
+            
+            if (lastDotIndex > 0 && lastDotIndex < classifierExt.length() - 1) {
+                // Has classifier.extension format
+                classifier = classifierExt.substring(0, lastDotIndex);
+                extension = classifierExt.substring(lastDotIndex + 1);
+            } else if (lastDotIndex < 0) {
+                // Just extension, no classifier
+                extension = classifierExt;
+            } else {
+                getLog().warn("Invalid format for additional classifier: " + classifierExt + " (expected: 'extension' or 'classifier.extension')");
+                continue;
+            }
+
+            if (classifier != null) {
+                getLog().debug("Downloading additional artifact - classifier: " + classifier + ", extension: " + extension);
+            } else {
+                getLog().debug("Downloading additional artifact - extension: " + extension);
+            }
+            downloadArtifactAndSidecars(new ArtifactDownloadContext(
+                    remoteRepo, groupId, artifactId, version, extension, classifier, targetDir, false));
+        }
+    }
+
+    /**
      * Validates that all mandatory downloads succeeded.
      * 
      * @throws MojoFailureException if any mandatory artifacts failed to download
@@ -541,6 +614,8 @@ public class RcDownloadMojo extends AbstractStagingMojo {
                         "         central.downloadChecksums=" + this.downloadChecksums + "\n" +
                         "         central.downloadChecksums256=" + this.downloadChecksums256 + "\n" +
                         "         central.downloadChecksums512=" + this.downloadChecksums512 + "\n" +
+                        "         central.downloadAdditionalClassifiers=" + 
+                        (this.downloadAdditionalClassifiers != null ? this.downloadAdditionalClassifiers : "none") + "\n" +
                         "  =============== Output Configuration ===============\n" +
                         "         central.showMavenGoalOutput=" + this.showMavenGoalOutput + "\n" +
                         "  =============== Failure Handling Configuration ===============\n" +
@@ -611,6 +686,31 @@ public class RcDownloadMojo extends AbstractStagingMojo {
             if (isEclipsePackaging(packaging) && !p2Metadata) {
                 getLog().info(
                         "DRY-RUN:     - Note: P2 metadata automatically included for " + packaging + " packaging");
+            }
+        }
+
+        // Show additional classifiers if configured
+        if (this.downloadAdditionalClassifiers != null && !this.downloadAdditionalClassifiers.trim().isEmpty()) {
+            getLog().info("DRY-RUN:     - Additional classifiers: " + this.downloadAdditionalClassifiers);
+            String[] classifierExtensions = this.downloadAdditionalClassifiers.split(",");
+            for (String classifierExt : classifierExtensions) {
+                classifierExt = classifierExt.trim();
+                if (!classifierExt.isEmpty()) {
+                    int lastDotIndex = classifierExt.lastIndexOf('.');
+                    String classifier = null;
+                    String extension;
+                    
+                    if (lastDotIndex > 0 && lastDotIndex < classifierExt.length() - 1) {
+                        // Has classifier.extension format
+                        classifier = classifierExt.substring(0, lastDotIndex);
+                        extension = classifierExt.substring(lastDotIndex + 1);
+                        getLog().info("DRY-RUN:       * " + gav + ":" + extension + ":" + classifier + checksumSuffix);
+                    } else if (lastDotIndex < 0) {
+                        // Just extension, no classifier
+                        extension = classifierExt;
+                        getLog().info("DRY-RUN:       * " + gav + ":" + extension + checksumSuffix);
+                    }
+                }
             }
         }
 
