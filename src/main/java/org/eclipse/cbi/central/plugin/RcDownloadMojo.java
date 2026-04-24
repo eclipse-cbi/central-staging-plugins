@@ -104,12 +104,6 @@ public class RcDownloadMojo extends AbstractStagingMojo {
                             "  -Dcentral.repositoryUrl=<url>");
         }
 
-        // Validate repository URL is provided
-        if (this.repositoryUrl == null || this.repositoryUrl.isBlank()) {
-            throw new MojoFailureException(
-                    "Repository URL is required. Please provide -Dcentral.repositoryUrl=<url>");
-        }
-
         // Display Maven execution context information
         logMavenExecutionContext();
 
