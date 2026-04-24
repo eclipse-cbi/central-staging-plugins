@@ -190,6 +190,7 @@ public class RcSyncMojo extends AbstractStagingMojo {
         bundleMojo.signArtifacts = this.signArtifacts;
         bundleMojo.forceSignArtifacts = this.forceSignArtifacts;
         bundleMojo.p2Metadata = this.p2Metadata;
+        bundleMojo.downloadAdditionalClassifiers = this.downloadAdditionalClassifiers;
         bundleMojo.downloadSignatures = this.downloadSignatures;
         bundleMojo.downloadChecksums = this.downloadChecksums;
         bundleMojo.downloadChecksums256 = this.downloadChecksums256;

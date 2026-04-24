@@ -812,6 +812,7 @@ public class RcBundleMojo extends AbstractStagingMojo {
 
         // Download configuration - enable all downloads, let bundle mojo handle
         // processing
+        downloadMojo.downloadAdditionalClassifiers = this.downloadAdditionalClassifiers;
         downloadMojo.downloadSignatures = this.downloadSignatures;
         downloadMojo.downloadChecksums = this.downloadChecksums;
         downloadMojo.downloadChecksums256 = this.downloadChecksums256;
