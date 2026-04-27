@@ -53,14 +53,6 @@
         <developerConnection>scm:git:git@github.com/eclipse-cbi/central-staging-plugins.git</developerConnection>
     </scm>
 
-    <distributionManagement>
-        <snapshotRepository>
-            <id>repo.eclipse.org</id>
-            <name>Eclipse CBI Maven2 Snapshots Repository</name>
-            <url>https://repo.eclipse.org/repository/cbi-maven2-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -213,4 +205,35 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>eclipse-repo</id>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>repo.eclipse.org</id>
+                    <name>Eclipse CBI Maven2 Snapshots Repository</name>
+                    <url>https://repo.eclipse.org/repository/cbi-maven2-snapshots/</url>
+                </snapshotRepository>
+            </distributionManagement>
+            <build>
+                <plugins>
+                    <!-- Disable central-publishing-maven-plugin for eclipse-repo profile -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                    <!-- Use standard maven-deploy-plugin -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <version>3.1.4</version>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
