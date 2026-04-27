@@ -195,6 +195,7 @@ public class RcSyncMojo extends AbstractStagingMojo {
         bundleMojo.downloadChecksums = this.downloadChecksums;
         bundleMojo.downloadChecksums256 = this.downloadChecksums256;
         bundleMojo.downloadChecksums512 = this.downloadChecksums512;
+        bundleMojo.namespaceFilter = this.namespaceFilter;
         bundleMojo.failOnMissingSourcesJavadoc = this.failOnMissingSourcesJavadoc;
         bundleMojo.failOnMissingSignatureFile = this.failOnMissingSignatureFile;
         bundleMojo.failOnMissingChecksum = this.failOnMissingChecksum;

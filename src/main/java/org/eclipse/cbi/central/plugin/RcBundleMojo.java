@@ -862,6 +862,7 @@ public class RcBundleMojo extends AbstractStagingMojo {
                         "         central.dryRun=" + this.dryRun + "\n" +
                         "         central.skipDownload=" + this.skipDownload + "\n" +
                         "         central.zipArtifacts=" + this.zipArtifacts + "\n" +
+                        "         central.namespaceFilter=" + (this.namespaceFilter != null ? this.namespaceFilter : "none") + "\n" +
                         "  =============== Output Configuration ===============\n" +
                         "         central.showMavenGoalOutput=" + this.showMavenGoalOutput + "\n" +
                         "  =============== Failure Handling Configuration ===============\n" +
@@ -916,11 +917,27 @@ public class RcBundleMojo extends AbstractStagingMojo {
         Path root = stagingDir.toPath();
         Files.createDirectories(outZip.toPath().getParent());
         
+        // Convert namespace filter to path prefix if specified
+        String namespacePathPrefix = null;
+        if (namespaceFilter != null && !namespaceFilter.trim().isEmpty()) {
+            namespacePathPrefix = namespaceFilter.trim().replace('.', '/');
+            getLog().info("Applying namespace filter: " + namespaceFilter + " (path: " + namespacePathPrefix + ")");
+        }
+        final String filterPrefix = namespacePathPrefix;
+        
         ZipStatistics stats = new ZipStatistics();
         
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(outZip.toPath()));
                 java.util.stream.Stream<Path> stream = Files.walk(root)) {
             stream.filter(p -> p.toFile().isFile())
+                    .filter(p -> {
+                        // Apply namespace filter if specified
+                        if (filterPrefix != null) {
+                            String entryName = root.relativize(p).toString().replace('\\', '/');
+                            return entryName.startsWith(filterPrefix);
+                        }
+                        return true;
+                    })
                     .forEach(p -> {
                         String entryName = root.relativize(p).toString().replace('\\', '/');
                         try {

@@ -557,6 +557,13 @@ mvn central-staging-plugins:rc-bundle \
   -Dcentral.zipArtifacts=true
 ```
 
+**Filter by namespace** (zip only artifacts from a specific namespace):
+```bash
+mvn central-staging-plugins:rc-bundle \
+  -Dcentral.namespaceFilter="org.eclipse.cbi" \
+  -Dcentral.zipArtifacts=true
+```
+
 **Key Features:**
 
 - Processes artifacts in staging directory
@@ -576,6 +583,7 @@ mvn central-staging-plugins:rc-bundle \
 | `central.signArtifacts` | Boolean | `true` | Enable GPG signing of artifacts |
 | `central.forceSignArtifacts` | Boolean | `false` | Force re-signing existing signatures |
 | `central.zipArtifacts` | Boolean | `true` | Create ZIP bundle from processed artifacts |
+| `central.namespaceFilter` | String | - | Filter artifacts by namespace. Only artifacts under the specified namespace path will be included in the ZIP bundle. Example: `org.glassfish.jaxb` will only include files from `sync-staging/org/glassfish/jaxb/` |
 | `central.syncStagingDir` | File | `${project.build.directory}` | Base staging directory for artifacts |
 | `central.syncStagingDirName` | String | `sync-staging` | Name of the staging subdirectory within the build directory |
 | `central.syncBundleFile` | File | `${project.build.directory}/deployment-staging.zip` | Output bundle file location |
@@ -868,6 +876,7 @@ mvn central-staging-plugins:rc-sync \
 | `central.downloadChecksums512` | Boolean | `false` | Download SHA512 checksum files |
 | `central.downloadAdditionalClassifiers` | String | - | Download additional artifacts with custom classifier.extension or extension only. Comma-separated list. Example: `sig,audit-cdi.xml,coverage-cdi.html,suite.xml,sigtest-jdk17.sig` |
 | `central.p2Metadata` | Boolean | `false` | Process P2 repository metadata files (artifacts.xml, content.xml) |
+| `central.namespaceFilter` | String | - | Filter artifacts by namespace when creating ZIP bundle. Only artifacts under the specified namespace path will be included. Example: `org.glassfish.jaxb` will only include files from `sync-staging/org/glassfish/jaxb/` |
 | `central.zipArtifacts` | Boolean | `true` | Create ZIP bundle from processed artifacts |
 
 ### Validation Parameters

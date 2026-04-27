@@ -165,6 +165,13 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
     protected File syncBundleFile;
 
     /**
+     * Optional namespace filter to only include artifacts from a specific namespace in the ZIP bundle.
+     * Example: -Dcentral.namespaceFilter="org.glassfish.jaxb" will only zip contents from sync-staging/org/glassfish/jaxb
+     */
+    @Parameter(property = "central.namespaceFilter")
+    protected String namespaceFilter;
+
+    /**
      * The bundle name to use for the upload. If not specified, defaults to the
      * artifact filename without extension.
      */
