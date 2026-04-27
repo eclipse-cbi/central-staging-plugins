@@ -415,8 +415,8 @@ public class RcDownloadMojo extends AbstractStagingMojo {
                     remoteRepo, groupId, artifactId, version, "jar", null, targetDir, false));
         }
 
-        // Download sources and javadoc (not for eclipse-repository)
-        if (!ECLIPSE_REPOSITORY_PACKAGING.equals(packaging)) {
+        // Download sources and javadoc (not for eclipse-repository and pom packaging)
+        if (!ECLIPSE_REPOSITORY_PACKAGING.equals(packaging) && !POM_PACKAGING.equals(packaging)) {
             downloadArtifactAndSidecars(new ArtifactDownloadContext(
                     remoteRepo, groupId, artifactId, version, "jar", "sources", targetDir, false));
             downloadArtifactAndSidecars(new ArtifactDownloadContext(
