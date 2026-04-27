@@ -53,6 +53,14 @@
         <developerConnection>scm:git:git@github.com/eclipse-cbi/central-staging-plugins.git</developerConnection>
     </scm>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>repo.eclipse.org</id>
+            <name>Eclipse CBI Maven2 Snapshots Repository</name>
+            <url>https://repo.eclipse.org/repository/cbi-maven2-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
