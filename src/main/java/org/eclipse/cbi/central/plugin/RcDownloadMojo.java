@@ -63,6 +63,11 @@ public class RcDownloadMojo extends AbstractStagingMojo {
     private final java.util.Set<String> failedMandatoryDownloads = new java.util.HashSet<>();
 
     /**
+     * Cache of artifacts that were successfully downloaded.
+     */
+    private final java.util.Set<String> successfulDownloads = new java.util.HashSet<>();
+
+    /**
      * Main execution method for the rc-download Maven goal.
      * 
      * Downloads artifacts from a remote repository to a staging directory.
@@ -160,9 +165,14 @@ public class RcDownloadMojo extends AbstractStagingMojo {
                 getLog().info("DRY-RUN: Download simulation completed");
             }
 
+            // Log global download statistics for all packages
+            logGlobalDownloadStatistics(targetProjects.size());
+
             getLog().info("Artifacts downloaded to staging directory: " + stagingDir.getAbsolutePath());
 
         } catch (Exception e) {
+            // Log global download statistics for all packages
+            logGlobalDownloadStatistics(targetProjects.size());
             throw new MojoFailureException("Failed to download artifacts", e);
         }
     }
@@ -450,9 +460,10 @@ public class RcDownloadMojo extends AbstractStagingMojo {
         boolean success = downloadArtifactWithResolver(context.remoteRepo, context.groupId, context.artifactId,
                 context.version, context.extension, context.classifier, context.targetDir);
 
+        String coords = buildCoordinates(context.groupId, context.artifactId, context.version,
+                context.extension, context.classifier);
+
         if (!success) {
-            String coords = buildCoordinates(context.groupId, context.artifactId, context.version,
-                    context.extension, context.classifier);
             if (context.isMandatory) {
                 getLog().error("Failed to download mandatory artifact: " + coords);
                 failedDownloads.add(coords);
@@ -463,6 +474,9 @@ public class RcDownloadMojo extends AbstractStagingMojo {
             }
             return;
         }
+
+        // Track successful download
+        successfulDownloads.add(coords);
 
         // Download signature files if enabled
         if (this.downloadSignatures) {
@@ -553,6 +567,65 @@ public class RcDownloadMojo extends AbstractStagingMojo {
             downloadArtifactAndSidecars(new ArtifactDownloadContext(
                     remoteRepo, groupId, artifactId, version, extension, classifier, targetDir, false));
         }
+    }
+
+    /**
+     * Logs global download statistics for all processed packages.
+     * 
+     * @param packageCount The number of packages processed
+     */
+    private void logGlobalDownloadStatistics(int packageCount) {
+        int totalAttempts = successfulDownloads.size() + failedDownloads.size();
+        int successCount = successfulDownloads.size();
+        int failedCount = failedDownloads.size();
+        int failedMandatoryCount = failedMandatoryDownloads.size();
+        int failedOptionalCount = failedCount - failedMandatoryCount;
+
+        getLog().info("");
+        getLog().info("====================================================================");
+        getLog().info("Download Statistics");
+        getLog().info("====================================================================");
+        getLog().info("Packages processed:        " + packageCount);
+        getLog().info("Total artifacts processed: " + totalAttempts);
+        getLog().info("  ✓ Successful downloads:  " + successCount + " (" + 
+                      (totalAttempts > 0 ? String.format("%.1f%%", successCount * 100.0 / totalAttempts) : "0.0%") + ")");
+        getLog().info("  ✗ Failed downloads:      " + failedCount + " (" + 
+                      (totalAttempts > 0 ? String.format("%.1f%%", failedCount * 100.0 / totalAttempts) : "0.0%") + ")");
+        
+        if (failedCount > 0) {
+            getLog().info("    - Mandatory failures:  " + failedMandatoryCount);
+            getLog().info("    - Optional failures:   " + failedOptionalCount);
+            getLog().info("");
+            getLog().info("  Failed artifacts:");
+            
+            if (failedMandatoryCount > 0) {
+                getLog().info("    Mandatory:");
+                for (String coords : failedMandatoryDownloads) {
+                    getLog().info("      ✗ " + coords);
+                }
+            }
+            
+            if (failedOptionalCount > 0) {
+                getLog().info("    Optional:");
+                for (String coords : failedDownloads) {
+                    if (!failedMandatoryDownloads.contains(coords)) {
+                        getLog().info("      ⚠ " + coords);
+                    }
+                }
+            }
+        }
+        
+        getLog().info("====================================================================");
+        
+        if (failedCount == 0) {
+            getLog().info("✓ All artifacts downloaded successfully!");
+        } else if (failedMandatoryCount == 0) {
+            getLog().info("⚠ All mandatory artifacts downloaded, but some optional artifacts failed.");
+        } else {
+            getLog().info("✗ Some mandatory artifacts failed to download.");
+        }
+        getLog().info("====================================================================");
+        getLog().info("");
     }
 
     /**

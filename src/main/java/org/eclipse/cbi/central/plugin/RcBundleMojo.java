@@ -891,15 +891,42 @@ public class RcBundleMojo extends AbstractStagingMojo {
      * @return The created zip file
      * @throws IOException if zipping fails
      */
+    /**
+     * Statistics collector for ZIP bundle creation.
+     */
+    private static class ZipStatistics {
+        int totalFiles = 0;
+        long totalUncompressedSize = 0;
+        final java.util.Map<String, Integer> filesByExtension = new java.util.HashMap<>();
+        final java.util.Map<String, Long> sizeByExtension = new java.util.HashMap<>();
+
+        void addFile(Path filePath, long fileSize, RcBundleMojo mojo) {
+            totalFiles++;
+            totalUncompressedSize += fileSize;
+            
+            String fileName = filePath.getFileName().toString();
+            String extension = mojo.getFileExtension(fileName);
+            
+            filesByExtension.merge(extension, 1, Integer::sum);
+            sizeByExtension.merge(extension, fileSize, Long::sum);
+        }
+    }
+
     private File zipStaging(File stagingDir, File outZip) throws IOException {
         Path root = stagingDir.toPath();
         Files.createDirectories(outZip.toPath().getParent());
+        
+        ZipStatistics stats = new ZipStatistics();
+        
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(outZip.toPath()));
                 java.util.stream.Stream<Path> stream = Files.walk(root)) {
             stream.filter(p -> p.toFile().isFile())
                     .forEach(p -> {
                         String entryName = root.relativize(p).toString().replace('\\', '/');
                         try {
+                            long fileSize = Files.size(p);
+                            stats.addFile(p, fileSize, this);
+                            
                             zos.putNextEntry(new ZipEntry(entryName));
                             Files.copy(p, zos);
                             zos.closeEntry();
@@ -910,8 +937,96 @@ public class RcBundleMojo extends AbstractStagingMojo {
         } catch (java.io.UncheckedIOException e) {
             throw e.getCause();
         }
-        getLog().info("Bundle ZIP created from staging: " + outZip.getAbsolutePath());
+        
+        long compressedSize = outZip.length();
+        displayZipStatistics(outZip, stats, compressedSize);
+        
         return outZip;
+    }
+
+    /**
+     * Displays detailed statistics about the created ZIP bundle.
+     * 
+     * @param zipFile        The created ZIP file
+     * @param stats          Statistics collected during ZIP creation
+     * @param compressedSize The final size of the ZIP file
+     */
+    private void displayZipStatistics(File zipFile, ZipStatistics stats, long compressedSize) {
+        getLog().info("====================================================================");
+        getLog().info("ZIP Bundle Statistics");
+        getLog().info("====================================================================");
+        getLog().info("Bundle location: " + zipFile.getAbsolutePath());
+        getLog().info("");
+        getLog().info("Total files included: " + stats.totalFiles);
+        getLog().info("Total uncompressed size: " + formatFileSize(stats.totalUncompressedSize));
+        getLog().info("Compressed size (ZIP):   " + formatFileSize(compressedSize));
+        getLog().info("");
+        getLog().info("Files by type:");
+        
+        // Sort by count descending
+        stats.filesByExtension.entrySet().stream()
+            .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+            .forEach(entry -> {
+                String ext = entry.getKey();
+                int count = entry.getValue();
+                long size = stats.sizeByExtension.getOrDefault(ext, 0L);
+                getLog().info(String.format("  %-15s: %4d files  (%s)", 
+                    ext, count, formatFileSize(size)));
+            });
+        
+        getLog().info("====================================================================");
+    }
+
+    /**
+     * Formats a file size in bytes to a human-readable format.
+     * 
+     * @param bytes The size in bytes
+     * @return Formatted size string (e.g., "1.5 MB")
+     */
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024) {
+            return bytes + " B";
+        } else if (bytes < 1024 * 1024) {
+            return String.format("%.2f KB", bytes / 1024.0);
+        } else if (bytes < 1024 * 1024 * 1024) {
+            return String.format("%.2f MB", bytes / (1024.0 * 1024.0));
+        } else {
+            return String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0));
+        }
+    }
+
+    /**
+     * Extracts the file extension from a filename, recognizing compound extensions.
+     * 
+     * @param fileName The name of the file
+     * @return The file extension (e.g., "jar", "jar.asc", "pom.md5")
+     */
+    private String getFileExtension(String fileName) {
+        // Check for compound extensions first (signatures and checksums)
+        if (fileName.endsWith(".jar.asc")) return "jar.asc";
+        if (fileName.endsWith(".pom.asc")) return "pom.asc";
+        if (fileName.endsWith(".xml.asc")) return "xml.asc";
+        if (fileName.endsWith(".zip.asc")) return "zip.asc";
+        if (fileName.endsWith(".jar.md5")) return "jar.md5";
+        if (fileName.endsWith(".pom.md5")) return "pom.md5";
+        if (fileName.endsWith(".jar.sha1")) return "jar.sha1";
+        if (fileName.endsWith(".pom.sha1")) return "pom.sha1";
+        if (fileName.endsWith(".jar.sha256")) return "jar.sha256";
+        if (fileName.endsWith(".pom.sha256")) return "pom.sha256";
+        if (fileName.endsWith(".jar.sha512")) return "jar.sha512";
+        if (fileName.endsWith(".pom.sha512")) return "pom.sha512";
+        if (fileName.endsWith(".xml.md5")) return "xml.md5";
+        if (fileName.endsWith(".xml.sha1")) return "xml.sha1";
+        if (fileName.endsWith(".xml.sha256")) return "xml.sha256";
+        if (fileName.endsWith(".xml.sha512")) return "xml.sha512";
+        if (fileName.endsWith(".zip.md5")) return "zip.md5";
+        if (fileName.endsWith(".zip.sha1")) return "zip.sha1";
+        if (fileName.endsWith(".zip.sha256")) return "zip.sha256";
+        if (fileName.endsWith(".zip.sha512")) return "zip.sha512";
+        
+        // Simple extension fallback
+        int lastDot = fileName.lastIndexOf('.');
+        return lastDot > 0 ? fileName.substring(lastDot + 1) : "no-extension";
     }
 
     // ================================================================================================
