@@ -782,7 +782,14 @@ public class RcBundleMojo extends AbstractStagingMojo {
             String packaging) {
         for (String artifactName : buildArtifactFileNames(artifactId, version, packaging)) {
             File artifactFile = new File(artifactDir, artifactName);
-            if (artifactFile.exists()) {
+            if (!artifactFile.exists()) {
+                // File doesn't exist - check if it's from additional classifiers
+                if (isFromAdditionalClassifiers(artifactName, artifactId, version)) {
+                    getLog().warn("Optional artifact from additional classifiers not found: " + artifactName);
+                } else {
+                    getLog().error("Required artifact file is missing: " + artifactName);
+                }
+            } else {
                 File ascFile = new File(artifactDir, artifactName + ASC_EXTENSION);
                 if (!ascFile.exists()) {
                     return true;
