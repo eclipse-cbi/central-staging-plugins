@@ -27,6 +27,7 @@ import org.apache.maven.plugin.MojoFailureException;
 
 import java.io.File;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Abstract base class for staging-related mojos with common constants and
@@ -630,6 +631,84 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
             getLog().warn(artifactType + " artifact not found (continuing): " + artifactSpec +
                     " (use failOnMissingSourcesJavadoc=true to fail instead)");
         }
+    }
+
+    // ================================================================================================
+    // ADDITIONAL CLASSIFIERS PARSING
+    // ================================================================================================
+
+    /**
+     * Helper class to represent a parsed additional classifier entry.
+     */
+    protected static class AdditionalClassifierEntry {
+        final String classifier; // may be null for extension-only entries
+        final String extension;
+
+        AdditionalClassifierEntry(String classifier, String extension) {
+            this.classifier = classifier;
+            this.extension = extension;
+        }
+
+        /**
+         * Builds the artifact filename for this classifier entry.
+         * 
+         * @param artifactId The artifact ID
+         * @param version    The version
+         * @return The constructed filename
+         */
+        String buildFilename(String artifactId, String version) {
+            String baseName = artifactId + "-" + version;
+            if (classifier != null) {
+                return baseName + "-" + classifier + "." + extension;
+            } else {
+                return baseName + "." + extension;
+            }
+        }
+    }
+
+    /**
+     * Parses the downloadAdditionalClassifiers configuration into structured entries.
+     * 
+     * @return List of parsed additional classifier entries, empty if not configured
+     */
+    protected List<AdditionalClassifierEntry> parseAdditionalClassifiers() {
+        List<AdditionalClassifierEntry> entries = new ArrayList<>();
+        
+        if (this.downloadAdditionalClassifiers == null || this.downloadAdditionalClassifiers.trim().isEmpty()) {
+            return entries;
+        }
+
+        String[] classifierExtensions = this.downloadAdditionalClassifiers.split(",");
+        
+        for (String classifierExt : classifierExtensions) {
+            classifierExt = classifierExt.trim();
+            if (classifierExt.isEmpty()) {
+                continue;
+            }
+
+            // Parse entry: can be "extension" or "classifier.extension"
+            // Examples: "sig" -> extension="sig", classifier=null
+            //           "audit-cdi.xml" -> extension="xml", classifier="audit-cdi"
+            int lastDotIndex = classifierExt.lastIndexOf('.');
+            String classifier = null;
+            String extension;
+            
+            if (lastDotIndex > 0 && lastDotIndex < classifierExt.length() - 1) {
+                // Has classifier.extension format
+                classifier = classifierExt.substring(0, lastDotIndex);
+                extension = classifierExt.substring(lastDotIndex + 1);
+            } else if (lastDotIndex < 0) {
+                // Just extension, no classifier
+                extension = classifierExt;
+            } else {
+                getLog().warn("Invalid format for additional classifier: " + classifierExt);
+                continue;
+            }
+
+            entries.add(new AdditionalClassifierEntry(classifier, extension));
+        }
+        
+        return entries;
     }
 
     // ================================================================================================

@@ -201,7 +201,14 @@ public class RcBundleMojo extends AbstractStagingMojo {
             throws MojoFailureException {
         for (String artifactName : buildArtifactFileNames(artifactId, version, packaging)) {
             File artifactFile = new File(artifactDir, artifactName);
-            if (artifactFile.exists()) {
+            if (!artifactFile.exists()) {
+                // File doesn't exist - check if it's from additional classifiers
+                if (isFromAdditionalClassifiers(artifactName, artifactId, version)) {
+                    getLog().warn("Optional artifact from additional classifiers not found: " + artifactName);
+                } else {
+                    getLog().error("Required artifact file is missing: " + artifactName);
+                }
+            } else {
                 displayChecksumsForFile(artifactDir, artifactName);
             }
         }
@@ -330,7 +337,14 @@ public class RcBundleMojo extends AbstractStagingMojo {
 
         for (String artifactName : buildArtifactFileNames(artifactId, version, packaging)) {
             File artifactFile = new File(artifactDir, artifactName);
-            if (artifactFile.exists()) {
+            if (!artifactFile.exists()) {
+                // File doesn't exist - check if it's from additional classifiers
+                if (isFromAdditionalClassifiers(artifactName, artifactId, version)) {
+                    getLog().warn("Optional artifact from additional classifiers not found: " + artifactName);
+                } else {
+                    getLog().error("Required artifact file is missing: " + artifactName);
+                }
+            } else {
                 // Generate checksums for all enabled types
                 for (ChecksumType checksumType : checksumTypes) {
                     if (checksumType.enabled) {
@@ -486,7 +500,15 @@ public class RcBundleMojo extends AbstractStagingMojo {
             for (String artifactName : buildArtifactFileNames(artifactId, version, packaging)) {
                 File artifactFile = new File(artifactDir, artifactName);
                 File ascFile = new File(artifactDir, artifactName + ASC_EXTENSION);
-                if (artifactFile.exists() && (forceResign || !ascFile.exists())) {
+                
+                if (!artifactFile.exists()) {
+                    // File doesn't exist - check if it's from additional classifiers
+                    if (isFromAdditionalClassifiers(artifactName, artifactId, version)) {
+                        getLog().warn("Optional artifact from additional classifiers not found: " + artifactName);
+                    } else {
+                        getLog().error("Required artifact file is missing: " + artifactName);
+                    }
+                } else if (forceResign || !ascFile.exists()) {
                     signSingleArtifact(artifactFile, ascFile, artifactName);
                 } else {
                     getLog().info("Signature already present for: " + artifactName);
@@ -496,6 +518,26 @@ public class RcBundleMojo extends AbstractStagingMojo {
             throw new MojoFailureException("Failed to sign downloaded artifacts for " + targetProject.getArtifactId(),
                     e);
         }
+    }
+
+    /**
+     * Checks if an artifact filename comes from the additional classifiers configuration.
+     * 
+     * @param artifactName The artifact filename to check
+     * @param artifactId   The artifact ID
+     * @param version      The version
+     * @return true if the artifact is from additional classifiers, false otherwise
+     */
+    private boolean isFromAdditionalClassifiers(String artifactName, String artifactId, String version) {
+        List<AdditionalClassifierEntry> entries = parseAdditionalClassifiers();
+        
+        for (AdditionalClassifierEntry entry : entries) {
+            if (artifactName.equals(entry.buildFilename(artifactId, version))) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**
@@ -716,6 +758,13 @@ public class RcBundleMojo extends AbstractStagingMojo {
             names.add(baseName + P2_ARTIFACTS_SUFFIX);
             names.add(baseName + P2_METADATA_SUFFIX);
         }
+
+        // Include additional classifiers if configured
+        List<AdditionalClassifierEntry> additionalEntries = parseAdditionalClassifiers();
+        for (AdditionalClassifierEntry entry : additionalEntries) {
+            names.add(entry.buildFilename(artifactId, version));
+        }
+
         return names;
     }
 

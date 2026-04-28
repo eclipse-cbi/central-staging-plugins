@@ -527,45 +527,22 @@ public class RcDownloadMojo extends AbstractStagingMojo {
      */
     private void downloadAdditionalClassifiers(RemoteRepository remoteRepo, String groupId, String artifactId,
             String version, File targetDir) {
-        if (this.downloadAdditionalClassifiers == null || this.downloadAdditionalClassifiers.trim().isEmpty()) {
+        List<AdditionalClassifierEntry> entries = parseAdditionalClassifiers();
+        
+        if (entries.isEmpty()) {
             return;
         }
 
         getLog().info("Downloading additional classifiers: " + this.downloadAdditionalClassifiers);
 
-        String[] classifierExtensions = this.downloadAdditionalClassifiers.split(",");
-        for (String classifierExt : classifierExtensions) {
-            classifierExt = classifierExt.trim();
-            if (classifierExt.isEmpty()) {
-                continue;
-            }
-
-            // Parse entry: can be "extension" or "classifier.extension"
-            // Examples: "sig" -> extension="sig", classifier=null
-            //           "audit-cdi.xml" -> extension="xml", classifier="audit-cdi"
-            int lastDotIndex = classifierExt.lastIndexOf('.');
-            String classifier = null;
-            String extension;
-            
-            if (lastDotIndex > 0 && lastDotIndex < classifierExt.length() - 1) {
-                // Has classifier.extension format
-                classifier = classifierExt.substring(0, lastDotIndex);
-                extension = classifierExt.substring(lastDotIndex + 1);
-            } else if (lastDotIndex < 0) {
-                // Just extension, no classifier
-                extension = classifierExt;
+        for (AdditionalClassifierEntry entry : entries) {
+            if (entry.classifier != null) {
+                getLog().debug("Downloading additional artifact - classifier: " + entry.classifier + ", extension: " + entry.extension);
             } else {
-                getLog().warn("Invalid format for additional classifier: " + classifierExt + " (expected: 'extension' or 'classifier.extension')");
-                continue;
-            }
-
-            if (classifier != null) {
-                getLog().debug("Downloading additional artifact - classifier: " + classifier + ", extension: " + extension);
-            } else {
-                getLog().debug("Downloading additional artifact - extension: " + extension);
+                getLog().debug("Downloading additional artifact - extension: " + entry.extension);
             }
             downloadArtifactAndSidecars(new ArtifactDownloadContext(
-                    remoteRepo, groupId, artifactId, version, extension, classifier, targetDir, false));
+                    remoteRepo, groupId, artifactId, version, entry.extension, entry.classifier, targetDir, false));
         }
     }
 
@@ -757,26 +734,14 @@ public class RcDownloadMojo extends AbstractStagingMojo {
         }
 
         // Show additional classifiers if configured
-        if (this.downloadAdditionalClassifiers != null && !this.downloadAdditionalClassifiers.trim().isEmpty()) {
+        List<AdditionalClassifierEntry> additionalEntries = parseAdditionalClassifiers();
+        if (!additionalEntries.isEmpty()) {
             getLog().info("DRY-RUN:     - Additional classifiers: " + this.downloadAdditionalClassifiers);
-            String[] classifierExtensions = this.downloadAdditionalClassifiers.split(",");
-            for (String classifierExt : classifierExtensions) {
-                classifierExt = classifierExt.trim();
-                if (!classifierExt.isEmpty()) {
-                    int lastDotIndex = classifierExt.lastIndexOf('.');
-                    String classifier = null;
-                    String extension;
-                    
-                    if (lastDotIndex > 0 && lastDotIndex < classifierExt.length() - 1) {
-                        // Has classifier.extension format
-                        classifier = classifierExt.substring(0, lastDotIndex);
-                        extension = classifierExt.substring(lastDotIndex + 1);
-                        getLog().info("DRY-RUN:       * " + gav + ":" + extension + ":" + classifier + checksumSuffix);
-                    } else if (lastDotIndex < 0) {
-                        // Just extension, no classifier
-                        extension = classifierExt;
-                        getLog().info("DRY-RUN:       * " + gav + ":" + extension + checksumSuffix);
-                    }
+            for (AdditionalClassifierEntry entry : additionalEntries) {
+                if (entry.classifier != null) {
+                    getLog().info("DRY-RUN:       * " + gav + ":" + entry.extension + ":" + entry.classifier + checksumSuffix);
+                } else {
+                    getLog().info("DRY-RUN:       * " + gav + ":" + entry.extension + checksumSuffix);
                 }
             }
         }
