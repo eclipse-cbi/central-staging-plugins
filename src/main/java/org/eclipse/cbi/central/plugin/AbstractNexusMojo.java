@@ -136,9 +136,8 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
      * settings.xml server entry.
      *
      * @return the username string
-     * @throws MojoFailureException if no username can be obtained
      */
-    protected String getUsername() throws MojoFailureException {
+    protected String getUsername() {
         if (username != null && !username.isEmpty()) {
             return username;
         }
@@ -150,10 +149,10 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
                 return server.getUsername();
             }
         }
-
-        throw new MojoFailureException(
-                "No username found. Provide -Dnexus.username=<username> or configure server '"
-                        + serverId + "' in settings.xml");
+        if (username == null || username.isEmpty()) {
+            getLog().warn("Username provided but empty. Please provide a username to avoid rate limiting.");    
+        }
+        return username;
     }
 
     /**
@@ -161,13 +160,8 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
      * settings.xml server entry.
      *
      * @return the password string
-     * @throws MojoFailureException if no password can be obtained
      */
-    protected String getPassword() throws MojoFailureException {
-        if (password != null && !password.isEmpty()) {
-            return password;
-        }
-
+    protected String getPassword() {
         // Try to get password from settings.xml
         if (settings != null && serverId != null) {
             Server server = settings.getServer(serverId);
@@ -175,10 +169,11 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
                 return decryptPassword(server);
             }
         }
-
-        throw new MojoFailureException(
-                "No password found. Provide -Dnexus.password=<password> or configure server '"
-                        + serverId + "' in settings.xml");
+        
+        if (password == null || password.isEmpty()) {
+            getLog().warn("Password provided but empty. Please provide a password to avoid rate limiting.");  
+        }
+        return password;
     }
 
     /**
@@ -204,8 +199,10 @@ public abstract class AbstractNexusMojo extends AbstractMojo {
      * @throws MojoFailureException if initialization fails
      */
     protected void initClient() throws MojoFailureException {
+    
         String user = getUsername();
         String pass = getPassword();
+
         if (nexusApiUrl != null && !nexusApiUrl.isEmpty()) {
             client = new NexusClient(user, pass, nexusApiUrl);
         } else {

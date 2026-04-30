@@ -146,7 +146,7 @@ public abstract class BaseRepositoryClient {
             // Use Bearer Token Authentication
             builder.addHeader(HEADER_AUTH, "Bearer " + this.bearerToken);
         } else {
-            throw new IllegalStateException("No authentication method provided.");
+            // throw new IllegalStateException("No authentication method provided.");
         }
 
         return builder;

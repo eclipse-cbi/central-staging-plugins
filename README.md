@@ -915,8 +915,8 @@ The staging directory structure is controlled by two parameters:
 |-----------|------|---------|-------------|
 | `nexus.serverId` | String | `nexus` | Maven settings.xml server ID for authentication |
 | `nexus.apiUrl` | String | `https://repo.eclipse.org/service/rest/v1` | Nexus Repository Manager API endpoint URL |
-| `nexus.username` | String | - | The username used for authentication with the Nexus Repository Manager API. If unset, username is obtained from settings.xml |
-| `nexus.password` | String | - | The password used for authentication with the Nexus Repository Manager API. If unset, password is obtained from settings.xml |
+| `nexus.username` | String | - | The username used for authentication with the Nexus Repository Manager API. Username is obtained from settings.xml, if unset then API have to be accessible without authentication. |
+| `nexus.password` | String | - | The password used for authentication with the Nexus Repository Manager API. Password is obtained from settings.xml, if unset then API have to be accessible without authentication. |
 | `nexus.repository` | String | - | The Nexus repository to search in. If not set, searches across all repositories (slower) |
 | `nexus.group` | String | `${project.groupId}` | The group/organization/namespace to filter by (e.g., org.eclipse.example) |
 | `nexus.artifact` | String | `${project.artifactId}` | The artifact ID to filter by |
