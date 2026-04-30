@@ -523,6 +523,9 @@ mvn org.eclipse.cbi.central:central-staging-plugins:VERSION:rc-download \
 | `central.syncStagingDir` | File | `${project.build.directory}` | Base staging directory for artifacts |
 | `central.syncStagingDirName` | String | `sync-staging` | Name of the staging subdirectory within the build directory |
 | `central.p2Metadata` | Boolean | `false` | Process P2 repository metadata files (artifacts.xml, content.xml) |
+| `central.nexusArtifactsResolution` | Boolean | `false` | Resolve artifacts by querying Nexus REST API instead of inferring files from the packaging type. Requires `nexus.repository` to be set for best performance. |
+
+*When `central.nexusArtifactsResolution=true` is set, the goal also uses the [Nexus Parameters](#nexus-parameters) (`nexus.serverId`, `nexus.apiUrl`, `nexus.repository`) to authenticate and target the Nexus search.*
 
 *See also: [Core Configuration Parameters](#core-configuration-parameters), [Execution Control Parameters](#execution-control-parameters)*
 
@@ -540,11 +543,23 @@ mvn org.eclipse.cbi.central:central-staging-plugins:1.4.5-SNAPSHOT:rc-download \
 Download with additional custom artifacts:
 ```bash
 mvn central-staging-plugins:rc-download \
-  -Dcentral.repositoryUrl=https://repo.example.com/releases \
+  -Dcentral.repositoryUrl=https://repo.example.com/repository/releases \
   -Dcentral.namespace=jakarta.cdi \
   -Dcentral.name=jakarta.cdi-tck-core-impl \
   -Dcentral.version=5.0.0.Alpha2 \
   -Dcentral.downloadAdditionalClassifiers="audit-cdi.xml,coverage-cdi.html,suite.xml,sigtest-jdk17.sig"
+```
+
+Download using Nexus-based artifact resolution (discovers files via the Nexus REST API instead of inferring them from the packaging type):
+```bash
+mvn central-staging-plugins:rc-download \
+  -Dcentral.repositoryUrl=https://repo.example.com/repository/releases \
+  -Dcentral.namespace=org.eclipse.example \
+  -Dcentral.name=my-artifact \
+  -Dcentral.version=1.0.0 \
+  -Dcentral.nexusArtifactsResolution=true \
+  -Dnexus.repository=releases \
+  -Dnexus.serverId=my-nexus-server
 ```
 
 ### rc-bundle
@@ -910,6 +925,8 @@ The staging directory structure is controlled by two parameters:
 - `central.syncStagingDirName`: The subdirectory name within the base directory (defaults to `sync-staging`)
 
 ### Nexus Parameters
+
+Used by `nexus-list`, `nexus-drop`, and by `rc-download` when `central.nexusArtifactsResolution=true`.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|

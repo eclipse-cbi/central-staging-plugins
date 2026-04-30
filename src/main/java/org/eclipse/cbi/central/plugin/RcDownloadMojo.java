@@ -15,6 +15,7 @@ package org.eclipse.cbi.central.plugin;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugin.MojoFailureException;
 
 import java.io.File;
@@ -22,10 +23,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Collections;
+import java.util.Map;
 
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Repository;
+import org.eclipse.cbi.central.NexusClient;
 
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -66,6 +69,43 @@ public class RcDownloadMojo extends AbstractStagingMojo {
      * Cache of artifacts that were successfully downloaded.
      */
     private final java.util.Set<String> successfulDownloads = new java.util.HashSet<>();
+
+    // ================================================================================================
+    // NEXUS ARTIFACT RESOLUTION PARAMETERS
+    // ================================================================================================
+
+    /**
+     * If true, resolve artifacts by querying Nexus Repository Manager instead of
+     * inferring the artifact list from the packaging type.
+     * When enabled, the plugin calls the Nexus REST API to discover which files
+     * actually exist for the given GAV and downloads exactly those artifacts.
+     */
+    @Parameter(property = "-D", defaultValue = "false")
+    private boolean nexusArtifactsResolution;
+
+    /**
+     * Nexus Repository Manager REST API URL used when nexusArtifactsResolution is enabled.
+     * Defaults to the standard Eclipse Nexus instance when not set.
+     * Reuses the {@code nexus.apiUrl} property shared with other nexus-* goals.
+     */
+    @Parameter(property = "nexus.apiUrl")
+    private String nexusApiUrl;
+
+    /**
+     * Nexus repository name to scope the artifact search.
+     * If not set, the search is performed across all accessible repositories.
+     * Reuses the {@code nexus.repository} property shared with other nexus-* goals.
+     */
+    @Parameter(property = "nexus.repository")
+    private String nexusRepository;
+
+    /**
+     * Server ID in settings.xml used to resolve Nexus API credentials.
+     * If not set, falls back to central.serverSyncId.
+     * Reuses the {@code nexus.serverId} property shared with other nexus-* goals.
+     */
+    @Parameter(property = "nexus.serverId", defaultValue = "nexus")
+    private String nexusServerId;
 
     /**
      * Main execution method for the rc-download Maven goal.
@@ -393,8 +433,12 @@ public class RcDownloadMojo extends AbstractStagingMojo {
         syntheticModel.setArtifactId(artifactId);
         syntheticModel.setVersion(projectVersion);
 
-        // Download artifacts based on packaging type
-        downloadArtifactsByPackaging(remoteRepo, groupId, artifactId, projectVersion, packaging, targetDir);
+        // Download artifacts: either via Nexus query or by inferring from packaging type
+        if (this.nexusArtifactsResolution) {
+            downloadArtifactsByNexusAPI(remoteRepo, groupId, artifactId, projectVersion, targetDir);
+        } else {
+            downloadArtifactsByPackaging(remoteRepo, groupId, artifactId, projectVersion, packaging, targetDir);
+        }
     }
 
     /**
@@ -447,6 +491,172 @@ public class RcDownloadMojo extends AbstractStagingMojo {
 
         // Validate that all mandatory artifacts were downloaded successfully
         validateMandatoryDownloads();
+    }
+
+    /**
+     * Downloads artifacts by querying the Nexus Repository Manager REST API for
+     * the actual list of assets. This is an alternative to packaging-based resolution
+     * ({@link #downloadArtifactsByPackaging}) and downloads exactly the files that
+     * exist in Nexus rather than guessing from the packaging type.
+     *
+     * @param remoteRepo The Aether remote repository used for the actual download
+     * @param groupId    The group ID
+     * @param artifactId The artifact ID
+     * @param version    The version
+     * @param targetDir  The target directory for the downloaded files
+     * @throws MojoFailureException if the Nexus query fails or a mandatory artifact
+     *                              cannot be downloaded
+     */
+    private void downloadArtifactsByNexusAPI(RemoteRepository remoteRepo, String groupId, String artifactId,
+            String version, File targetDir) throws MojoFailureException {
+        getLog().info("Resolving artifacts via Nexus query for " + groupId + ":" + artifactId + ":" + version);
+
+        NexusClient nexusClient = buildNexusClient();
+
+        Map<String, Object> searchResult;
+        try {
+            searchResult = nexusClient.searchComponents(this.nexusRepository, groupId, artifactId, version);
+        } catch (IOException e) {
+            throw new MojoFailureException(
+                    "Failed to query Nexus for " + groupId + ":" + artifactId + ":" + version, e);
+        }
+
+        Object itemsObj = searchResult.get("items");
+        if (!(itemsObj instanceof List<?> items) || items.isEmpty()) {
+            getLog().warn("No components found in Nexus for " + groupId + ":" + artifactId + ":" + version
+                    + ". Nothing to download.");
+            return;
+        }
+
+        getLog().info("Found " + items.size() + " component(s) in Nexus - downloading assets");
+
+        for (Object itemObj : items) {
+            if (!(itemObj instanceof Map<?, ?> item)) continue;
+            Object assetsObj = item.get("assets");
+            if (!(assetsObj instanceof List<?> assets)) continue;
+
+            for (Object assetObj : assets) {
+                if (!(assetObj instanceof Map<?, ?> asset)) continue;
+
+                String[] extAndClassifier = extractMaven2Coordinates(asset, artifactId, version);
+                if (extAndClassifier == null) continue;
+
+                String extension = extAndClassifier[0];
+                String classifier = extAndClassifier[1]; // may be null
+
+                // Skip sidecar files — downloadArtifactAndSidecars handles them
+                if (isSidecarExtension(extension)) {
+                    continue;
+                }
+
+                // The POM is the only mandatory artifact
+                boolean isMandatory = "pom".equals(extension) && classifier == null;
+
+                downloadArtifactAndSidecars(new ArtifactDownloadContext(
+                        remoteRepo, groupId, artifactId, version, extension, classifier, targetDir, isMandatory));
+            }
+        }
+
+        validateMandatoryDownloads();
+    }
+
+    /**
+     * Creates a {@link NexusClient} using credentials resolved from settings.xml
+     * via the {@code nexus.serverId} server entry (default: {@code "nexus"}).
+     *
+     * @return a configured NexusClient instance
+     */
+    private NexusClient buildNexusClient() {
+        String username = null;
+        String password = null;
+        if (this.settings != null) {
+            org.apache.maven.settings.Server server = this.settings.getServer(this.nexusServerId);
+            if (server != null) {
+                username = server.getUsername();
+                password = server.getPassword();
+                getLog().debug("Nexus credentials resolved from settings.xml server: " + this.nexusServerId);
+            } else {
+                getLog().warn("No server entry found in settings.xml for nexus.serverId: " + this.nexusServerId);
+            }
+        }
+        return (this.nexusApiUrl != null && !this.nexusApiUrl.isBlank())
+                ? new NexusClient(username, password, this.nexusApiUrl)
+                : new NexusClient(username, password);
+    }
+
+    /**
+     * Extracts the Maven extension and classifier from a Nexus asset map.
+     * Tries the {@code maven2} metadata sub-map first (most reliable), then
+     * falls back to parsing the asset {@code path}.
+     *
+     * @param asset      The Nexus asset map
+     * @param artifactId The expected artifact ID (used for path-based fallback)
+     * @param version    The expected version (used for path-based fallback)
+     * @return A two-element array {@code [extension, classifier]} where classifier
+     *         may be {@code null}, or {@code null} if coordinates cannot be determined
+     */
+    private String[] extractMaven2Coordinates(Map<?, ?> asset, String artifactId, String version) {
+        // Try maven2 metadata sub-map first (Nexus includes this for Maven format)
+        Object maven2Obj = asset.get("maven2");
+        if (maven2Obj instanceof Map<?, ?> maven2) {
+            Object extObj = maven2.get("extension");
+            if (extObj != null && !extObj.toString().isBlank()) {
+                Object clsObj = maven2.get("classifier");
+                String classifier = (clsObj != null && !clsObj.toString().isBlank()) ? clsObj.toString() : null;
+                return new String[]{ extObj.toString(), classifier };
+            }
+        }
+
+        // Fall back to parsing the asset path
+        Object pathObj = asset.get("path");
+        if (pathObj == null) return null;
+
+        String path = pathObj.toString();
+        String fileName = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
+
+        // Expected format: artifactId-version[-classifier].extension(s)
+        String prefix = artifactId + "-" + version;
+        if (!fileName.startsWith(prefix)) return null;
+
+        String remainder = fileName.substring(prefix.length());
+        if (remainder.isEmpty()) return null;
+
+        String classifier;
+        String extension;
+
+        if (remainder.startsWith("-")) {
+            // Has a classifier: -classifier.extension
+            String withoutDash = remainder.substring(1);
+            int dotIdx = withoutDash.indexOf('.');
+            if (dotIdx < 0) return null;
+            classifier = withoutDash.substring(0, dotIdx);
+            extension = withoutDash.substring(dotIdx + 1);
+        } else if (remainder.startsWith(".")) {
+            // No classifier: .extension
+            classifier = null;
+            extension = remainder.substring(1);
+        } else {
+            return null;
+        }
+
+        if (extension.isBlank()) return null;
+        return new String[]{ extension, classifier };
+    }
+
+    /**
+     * Returns {@code true} if the given extension represents a sidecar file
+     * (GPG signature or checksum) that must not be downloaded independently.
+     * These files are handled automatically by {@link #downloadArtifactAndSidecars}.
+     *
+     * @param extension The file extension to inspect
+     * @return {@code true} if it is a known sidecar extension
+     */
+    private boolean isSidecarExtension(String extension) {
+        return extension.endsWith(".asc")
+                || extension.endsWith(".md5")
+                || extension.endsWith(".sha1")
+                || extension.endsWith(".sha256")
+                || extension.endsWith(".sha512");
     }
 
     /**
@@ -667,7 +877,12 @@ public class RcDownloadMojo extends AbstractStagingMojo {
                         "         central.failOnMissingSignatureFile=" + this.failOnMissingSignatureFile + "\n" +
                         "         central.failOnMissingChecksum=" + this.failOnMissingChecksum + "\n" +
                         "  =============== Artifact Processing Configuration ===============\n" +
-                        "         central.p2Metadata=" + this.p2Metadata);
+                        "         central.p2Metadata=" + this.p2Metadata + "\n" +
+                        "  =============== Nexus Artifact Resolution ===============\n" +
+                        "         central.nexusArtifactsResolution=" + this.nexusArtifactsResolution + "\n" +
+                        "         nexus.serverId=" + this.nexusServerId + "\n" +
+                        "         nexus.apiUrl=" + (this.nexusApiUrl != null ? this.nexusApiUrl : "default") + "\n" +
+                        "         nexus.repository=" + (this.nexusRepository != null ? this.nexusRepository : "all"));
     }
 
     // ================================================================================================
@@ -679,6 +894,15 @@ public class RcDownloadMojo extends AbstractStagingMojo {
      */
     private void logArtifactDownload(String gav, Repository repo, boolean p2Metadata, String packaging,
             File stagingDir) {
+
+        if (this.nexusArtifactsResolution) {
+            getLog().info("DRY-RUN: Would resolve artifacts via Nexus query for " + gav + " from " + repo.getUrl());
+            getLog().info("DRY-RUN:   Resolution mode: Nexus (central.nexusArtifactsResolution=true)");
+            getLog().info("DRY-RUN:   nexus.apiUrl: " + (this.nexusApiUrl != null ? this.nexusApiUrl : "default"));
+            getLog().info("DRY-RUN:   nexus.repository: " + (this.nexusRepository != null ? this.nexusRepository : "all repositories"));
+            getLog().info("DRY-RUN:   nexus.serverId: " + this.nexusServerId);
+            return;
+        }
 
         getLog().info("DRY-RUN: Would download artifacts for " + gav + " from " + repo.getUrl());
         getLog().info("DRY-RUN:   Step 1: dependency:get to local repository");
