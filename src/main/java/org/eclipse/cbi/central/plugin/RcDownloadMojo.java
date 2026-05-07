@@ -80,7 +80,7 @@ public class RcDownloadMojo extends AbstractStagingMojo {
      * When enabled, the plugin calls the Nexus REST API to discover which files
      * actually exist for the given GAV and downloads exactly those artifacts.
      */
-    @Parameter(property = "-D", defaultValue = "false")
+    @Parameter(property = "central.nexusArtifactsResolution", defaultValue = "false")
     private boolean nexusArtifactsResolution;
 
     /**
@@ -454,6 +454,8 @@ public class RcDownloadMojo extends AbstractStagingMojo {
      */
     private void downloadArtifactsByPackaging(RemoteRepository remoteRepo, String groupId, String artifactId,
             String version, String packaging, File targetDir) throws MojoFailureException {
+
+        getLog().info("Resolving artifacts via Maven for " + groupId + ":" + artifactId + ":" + version);
 
         downloadArtifactAndSidecars(new ArtifactDownloadContext(
                 remoteRepo, groupId, artifactId, version, "pom", null, targetDir, true));
