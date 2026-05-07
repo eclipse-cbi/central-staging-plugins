@@ -434,7 +434,13 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
         if ((this.session.getRequest() != null && !this.session.getRequest().isProjectPresent())) {
             stagingPath = System.getProperty("user.dir") + "/" + this.syncStagingDirName;
         } else {
-            stagingPath = this.syncStagingDir + "/" + this.syncStagingDirName;
+            // Check if syncStagingDir contains unresolved Maven variables
+            if (this.syncStagingDir != null && this.syncStagingDir.contains("${")) {
+                // Use current directory as fallback when variables are not resolved
+                stagingPath = System.getProperty("user.dir") + "/" + this.syncStagingDirName;
+            } else {
+                stagingPath = this.syncStagingDir + "/" + this.syncStagingDirName;
+            }
         }
         return stagingPath;
     }
@@ -446,6 +452,12 @@ public abstract class AbstractStagingMojo extends AbstractCentralMojo {
      */
     protected File effectiveBundlePath() {
         if (this.syncBundleFile != null) {
+            // Check if the file path contains unresolved Maven variables
+            String filePath = this.syncBundleFile.getPath();
+            if (filePath.contains("${")) {
+                // Use current directory as fallback when variables are not resolved
+                return new File(System.getProperty("user.dir"), DEFAULT_BUNDLE_NAME);
+            }
             return this.syncBundleFile;
         }
         if (this.project != null && this.project.getBuild() != null) {
