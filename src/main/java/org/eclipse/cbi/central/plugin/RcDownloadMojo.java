@@ -15,7 +15,6 @@ package org.eclipse.cbi.central.plugin;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugin.MojoFailureException;
 
 import java.io.File;
@@ -74,38 +73,6 @@ public class RcDownloadMojo extends AbstractStagingMojo {
     // NEXUS ARTIFACT RESOLUTION PARAMETERS
     // ================================================================================================
 
-    /**
-     * If true, resolve artifacts by querying Nexus Repository Manager instead of
-     * inferring the artifact list from the packaging type.
-     * When enabled, the plugin calls the Nexus REST API to discover which files
-     * actually exist for the given GAV and downloads exactly those artifacts.
-     */
-    @Parameter(property = "central.nexusArtifactsResolution", defaultValue = "false")
-    private boolean nexusArtifactsResolution;
-
-    /**
-     * Nexus Repository Manager REST API URL used when nexusArtifactsResolution is enabled.
-     * Defaults to the standard Eclipse Nexus instance when not set.
-     * Reuses the {@code nexus.apiUrl} property shared with other nexus-* goals.
-     */
-    @Parameter(property = "nexus.apiUrl")
-    private String nexusApiUrl;
-
-    /**
-     * Nexus repository name to scope the artifact search.
-     * If not set, the search is performed across all accessible repositories.
-     * Reuses the {@code nexus.repository} property shared with other nexus-* goals.
-     */
-    @Parameter(property = "nexus.repository")
-    private String nexusRepository;
-
-    /**
-     * Server ID in settings.xml used to resolve Nexus API credentials.
-     * If not set, falls back to central.serverSyncId.
-     * Reuses the {@code nexus.serverId} property shared with other nexus-* goals.
-     */
-    @Parameter(property = "nexus.serverId", defaultValue = "nexus")
-    private String nexusServerId;
 
     /**
      * Main execution method for the rc-download Maven goal.

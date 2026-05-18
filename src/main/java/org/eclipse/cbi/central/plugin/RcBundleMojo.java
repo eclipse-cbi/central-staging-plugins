@@ -874,6 +874,12 @@ public class RcBundleMojo extends AbstractStagingMojo {
         downloadMojo.downloadChecksums256 = this.downloadChecksums256;
         downloadMojo.downloadChecksums512 = this.downloadChecksums512;
 
+        // Nexus resolution
+        downloadMojo.nexusArtifactsResolution = this.nexusArtifactsResolution;
+        downloadMojo.nexusApiUrl = this.nexusApiUrl;
+        downloadMojo.nexusRepository = this.nexusRepository;
+        downloadMojo.nexusServerId = this.nexusServerId;
+
         // Inject Maven components
         downloadMojo.reactorProjects = this.reactorProjects;
         downloadMojo.session = this.session;
