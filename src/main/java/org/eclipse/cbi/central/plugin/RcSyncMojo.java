@@ -206,6 +206,12 @@ public class RcSyncMojo extends AbstractStagingMojo {
         bundleMojo.mojoExecution = this.mojoExecution;
         bundleMojo.repositorySystem = this.repositorySystem;
 
+        // Nexus resolution
+        bundleMojo.nexusArtifactsResolution = this.nexusArtifactsResolution;
+        bundleMojo.nexusApiUrl = this.nexusApiUrl;
+        bundleMojo.nexusRepository = this.nexusRepository;
+        bundleMojo.nexusServerId = this.nexusServerId;
+
         // RcBundleMojo specific - force ZIP creation for sync operation
         bundleMojo.zipArtifacts = true;
 
