@@ -17,7 +17,7 @@
         <maven.version>3.9.15</maven.version>
         <maven-resolver.version>1.9.27</maven-resolver.version>
         <okhttp.version>4.12.0</okhttp.version>
-        <jackson.version>2.21.3</jackson.version>
+        <jackson.version>2.22.0</jackson.version>
         <maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
         <commons-codec.version>1.22.0</commons-codec.version>
         <maven-invoker.version>3.3.0</maven-invoker.version>
